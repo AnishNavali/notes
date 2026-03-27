@@ -71,6 +71,7 @@ def check_user(current_user:CurrentUser):
         print(data)
         return {"valid":True,"data":data}
     else: 
+        db.save(collection="workspace",key={"user":email},doc={"workspace":[]})
         return {"valid":False,"data":dict(current_user)}
 
 @router.post("/signup")
