@@ -64,10 +64,12 @@ class Signup(BaseModel):
 @router.get("/check_user")
 def check_user(current_user:CurrentUser):
     email=current_user.get("email", "")#"anish.navali@gmail.com"
-    check=db.get_one_item(collection="users",username=email)
+    check=db.get_one(collection="workspace",key={"user":email})
     print(check)
     if check:
-        return {"valid":True,"data":check}
+        data=db.get_one(collection="users",key={"email":email})
+        print(data)
+        return {"valid":True,"data":data}
     else: 
         return {"valid":False,"data":dict(current_user)}
 

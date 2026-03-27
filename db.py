@@ -77,7 +77,7 @@ def get_one_item(collection=None, id=None, username=None):
     projection = {}
     projection["_id"] = 0
 
-    result = data_db.find_one({"_id": id, "email": username}, projection)
+    result = data_db.find_one({"_id": id, "user": username}, projection)
     return result
 
 
@@ -143,7 +143,7 @@ def get_one(collection=None, key=None, username=None, projection=None):
     data_db = db[collection]
     if projection is None:
         projection = {}
-    # projection['_id'] = 0
+    projection['_id'] = 0
 
     result = data_db.find_one(key, projection)
     return result
