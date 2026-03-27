@@ -7,10 +7,10 @@ router = APIRouter()
 
 
 @router.get("/get_workspace")
-async def get_workspace():#current_user:CurrentUser
+async def get_workspace(current_user:CurrentUser):#current_user:CurrentUser
     """Return the workspace for the authenticated user."""
     # print(current_user)
-    user_id = "Anish"
+    user_id = current_user.get("email", "")#"Anish"
     workspace = db.get_one(collection="workspace", key={"user": user_id})
     if not workspace:
         return {"workspace": []}
@@ -23,9 +23,9 @@ class Component(BaseModel):
 
 
 @router.post("/update_workspace")
-def update_workspace(data: Component):
+def update_workspace(data: Component, current_user:CurrentUser):
     """Update a workspace component for the authenticated user."""
-    user_id = "Anish"#current_user.get("name") or current_user.get("email", "")
+    user_id = current_user.get("email", "")#"Anish"#current_user.get("name") or current_user.get("email", "")
     update = db.save(
         collection="workspace",
         key={"user": user_id, "workspace.title": data.title},
@@ -35,8 +35,8 @@ def update_workspace(data: Component):
         return True
     
 @router.delete("/delete_component")
-def delete_component(data:Component):
-    user_id="Anish"
+def delete_component(data:Component, current_user:CurrentUser):
+    user_id=current_user.get("email", "")#"Anish"
     print(data)
     delete=db.delete_one_item(collection="workspace",key={"user":user_id},doc={"workspace":{"title":data.title}})
     print(delete)
@@ -44,8 +44,8 @@ def delete_component(data:Component):
         return True
     
 @router.post("/add_to_workspace")
-def add_to_workspace(data:Component):
-    user_id = "Anish"#current_user.get("name") or current_user.get("email", "")
+def add_to_workspace(data:Component, current_user:CurrentUser):
+    user_id = current_user.get("email", "")#"Anish"#current_user.get("name") or current_user.get("email", "")
     print(data)
     update = db.push(
         collection="workspace",
@@ -59,6 +59,23 @@ def add_to_workspace(data:Component):
 class Signup(BaseModel):
     country_code: str
     phone : str
+    subscription : str | None ="paid"
 
-# @router.post("/signup")
-# def signup(data:Signup)
+@router.get("/check_user")
+def check_user(current_user:CurrentUser):
+    email=current_user.get("email", "")#"anish.navali@gmail.com"
+    check=db.get_one_item(collection="users",username=email)
+    print(check)
+    if check:
+        return {"valid":True,"data":check}
+    else: 
+        return {"valid":False,"data":dict(current_user)}
+
+@router.post("/signup")
+def signup(data:Signup,current_user:CurrentUser):
+    email=current_user.get("email", "")#"anish.navali@gmail.com"
+    save=db.save(collection="users",key={"email":email},doc=dict(data))
+    print(save)
+    return True
+# signup(data=Signup(country_code="+91",phone="9606024155"))
+# print(check_user())

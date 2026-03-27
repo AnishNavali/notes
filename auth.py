@@ -241,6 +241,12 @@ async def oauth_callback(provider: str, request: Request):
         name=name,
         picture=picture,
     )
+    workspace=database.get_one(collection="workspace",key={"email":email})
+    if workspace:
+        pass
+    else:
+        database.save(collection="workspace",key={"user":email},doc={"workspace":[]})
+
 
     # ---- issue JWT ---------------------------------------------------------
     jwt_token = create_access_token(

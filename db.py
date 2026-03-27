@@ -25,14 +25,14 @@ def connect_db():
 def get_user(uname):
     db = connect_db()
     user_db = db["users"]
-    result = user_db.find_one({"username": uname})
+    result = user_db.find_one({"email": uname})
     return result
 
 
 def get_phone(uname):
     db = connect_db()
     user_db = db["users"]
-    result = user_db.find_one({"username": uname})
+    result = user_db.find_one({"email": uname})
     return result
 
 
@@ -50,7 +50,7 @@ def check_password(uname, pwd):
     db = connect_db()
     user_db = db["users"]
     result = user_db.find_one(
-        {"username": uname, "password": get_hashed(pwd)}, {"_id": 0, "password": 0}
+        {"email": uname, "password": get_hashed(pwd)}, {"_id": 0, "password": 0}
     )
     return result
 
@@ -77,7 +77,7 @@ def get_one_item(collection=None, id=None, username=None):
     projection = {}
     projection["_id"] = 0
 
-    result = data_db.find_one({"_id": id, "username": username}, projection)
+    result = data_db.find_one({"_id": id, "email": username}, projection)
     return result
 
 
@@ -89,7 +89,7 @@ def get_list(collection=None, attribute=None, username=None):
     projection[attribute] = 1
     projection["_id"] = 0
 
-    result = list(data_db.find({"username": username}, projection))
+    result = list(data_db.find({"email": username}, projection))
     print(result)
     if result is None:
         return {"status": False, "data": None}
@@ -127,7 +127,7 @@ def get_one_item(collection=None, id=None, username=None):
     projection = {}
     projection["_id"] = 0
 
-    result = data_db.find_one({"_id": id, "username": username}, projection)
+    result = data_db.find_one({"_id": id, "email": username}, projection)
     return result
 
 def delete_one_item(collection=None, key=None, doc=None):
@@ -174,7 +174,7 @@ def get_list(collection=None, attributes=[], username=None):
         projection[attribute] = 1
     projection["_id"] = 0
 
-    result = list(data_db.find({"username": username}, projection))
+    result = list(data_db.find({"email": username}, projection))
 
     if result is None:
         return {"status": False, "data": None}
@@ -207,7 +207,6 @@ def upsert_oauth_user(
 
     db = connect_db()
     users = db["users"]
-
     now = datetime.now(timezone.utc)
     filter_query = {"provider": provider, "provider_id": provider_id}
     update = {
@@ -226,6 +225,8 @@ def upsert_oauth_user(
     users.update_one(filter_query, update, upsert=True)
     doc = users.find_one(filter_query)
     doc["_id"] = str(doc["_id"])
+    
+
     return doc
 
 
