@@ -1,0 +1,59 @@
+from agno.agent import Agent
+# from agno.tools.notion import NotionTools
+from agno.models.aws import Claude, AwsBedrock 
+from boto3.session import Session
+from datetime import datetime
+from dotenv import load_dotenv
+from agno.tools.duckduckgo import DuckDuckGoTools
+from agno.tools.crawl4ai import Crawl4aiTools
+from agno.db.mongo import MongoDb
+from tools import *
+load_dotenv()
+mongo_client = MongoClient("mongodb://localhost:27017")
+
+db = MongoDb(db_client=mongo_client)
+session = Session(
+    aws_access_key_id="AKIA3AHH2NGRTY55WOIN",
+    aws_secret_access_key="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",
+    region_name="us-east-1"
+)
+# Create an agent with Notion Tools
+agent = Agent(model=
+        Claude(
+        id="us.anthropic.claude-sonnet-4-6",
+        session=session,
+        cache_system_prompt=True,
+        extended_cache_time=True,
+        cache_response=True),
+        db=db,
+        read_chat_history=True,
+        add_history_to_context=True,
+        num_history_runs=1,
+        # AwsBedrock(
+        #     id="nvidia.nemotron-super-3-120b",
+        #     session=session
+
+        # ),
+    name="AI note taker",
+    instructions="""You are Annie, an AI note taker + assistant.
+ Your job is to take down the notes and reminders the user gives you.
+ All notes/to-do-lists/reminders and any other thing the user wants to note down is always written into a 
+ workspace. 
+ The available components to be written in the workspace are: [table,task-list,todo,journal,goal,event,commitment,project]
+ 
+ Notes of how to add to workspace:
+     1. Call the get_component tool and pass the name of the component to get the format of the component to be added
+     2. Add or update a component based on the situation
+Note: add reminders to the workspace as well as an event type.
+ Use the tools given to carry out your work.
+""",
+    tools=[set_reminder,get_workspace,add_to_workspace,update_component,get_component_format,DuckDuckGoTools()],
+    markdown=True, 
+)
+# time=datetime.now(pytz.timezone('Asia/Kolkata'))
+# print(time)
+# agent.print_response(input=f"""<user_name>Anish</user_name>
+#                       <message>the format for event has been updated can you change the existing event type with the new format</message> 
+#                      <datetime>{time}</datetime>"""
+#                      ,
+#                      debug_mode=True)
