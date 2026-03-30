@@ -20,6 +20,10 @@ async def get_workspace(current_user:CurrentUser):#current_user:CurrentUser
 class Component(BaseModel):
     title: str | None = None
     component: dict | None = None
+    x: int | None = None
+    y: int | None = None
+    w: int | None = None
+    h: int | None = None
 
 
 @router.post("/update_workspace")
