@@ -12,17 +12,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from dependencies import CurrentUser
 import os
 
-ALLOWED_ORIGINS = [
-    o.strip()
-    for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
-    if o.strip()
-]
+# ALLOWED_ORIGINS = [
+#     o.strip()
+#     for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+#     if o.strip()
+# ]
 
 
 def add_cors(app):
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=ALLOWED_ORIGINS,
+        allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
