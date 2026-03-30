@@ -221,7 +221,17 @@ def get_component_format(component_type:str):
     "w": "width of the component on a scale of 1-12",
     "h": "height of the component on a scale of 1-12",
     "data": {
-      "reminders": ["Reminder1","Reminder2"],
+      "reminders": [
+           {
+              "title": 'Title of the reminder',
+              "date": '2026-03-31',
+              "time": '21:00',
+              "priority": 'medium',
+              "repeat": 'none',
+              "completed": False,
+              "createdAt": '2026-03-30T10:56:51.869Z'
+            }
+      ],
     },
   }
     }
