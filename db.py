@@ -107,6 +107,11 @@ def push(collection=None, key=None, doc=None):
     db = client[collection]
     result = db.update_one(key, {"$push": doc}, upsert=True)
     return result
+def inc(collection=None, key=None, doc=None):
+    client = connect_db()
+    db = client[collection]
+    result = db.update_one(key, {"$inc": doc}, upsert=True)
+    return result
 
 def insert(collection=None, doc=None):
     client = connect_db()

@@ -3,13 +3,18 @@ from celery import Celery
 from pymongo import MongoClient
 from bson import ObjectId
 from datetime import datetime
+import db as database
 import httpx
 import pytz
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
-PHONE_NUMBER_ID = "1104016476118691"
+VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
+WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
+PHONE_NUMBER_ID = os.getenv("PHONE_NUMBER_ID")
+WHATSAPP_API_URL = f"https://graph.facebook.com/v22.0/{PHONE_NUMBER_ID}/messages"
 
-WHATSAPP_TOKEN = "EAASZCUKLoOEEBRIZBCl9gZCjZC9XsbwlIVf9ZCXD54Add0SpwlrzdYpThG7ieOzL8kZAUFbOyYwvG4py55wPIrfXTQFkq6FC4vJZBJEnOPNET7ikEdx24258VsIGED0dTwXyUlLnu7ITdmtJ9yrueXHkueW8odMlNEkYttdqbztrnsdfPv5VlRZCizK8uWWKc5l2ibv2jZB9WM2QMKw9ZBqiK6rEjQaLk9WpOZAF6cn"
-WHATSAPP_API_URL = f"https://graph.facebook.com/v21.0/{PHONE_NUMBER_ID}/messages"
 
 celery = Celery(
     "reminder_app",
@@ -38,7 +43,8 @@ def trigger_reminder(message: str, reminder_id: str, user_id: str):
             "triggered_at": datetime.now()
         }}
     )
-    send_message(to='919606024155',body=f"🔔 TRIGGERED for {user_id}: {message}")
+    whatsapp_number=database.get_one(collection="users",key={"email":user_id})["whatsapp_number"]
+    send_message(to=whatsapp_number,body=f"Reminder : {message}")
     return f"Triggered {reminder_id}"
 
 @celery.task

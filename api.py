@@ -95,6 +95,7 @@ def signup(data:Signup,current_user:CurrentUser):
     return True
 # signup(data=Signup(country_code="+91",phone="9606024155"))
 # print(check_user())
+
 class Msg(BaseModel):
     msg:str
 @router.post("/llm")

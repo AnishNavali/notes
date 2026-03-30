@@ -9,13 +9,14 @@ from agno.tools.duckduckgo import DuckDuckGoTools
 from agno.tools.crawl4ai import Crawl4aiTools
 from agno.db.mongo import MongoDb
 from tools import *
+import os 
 load_dotenv()
 mongo_client = MongoClient("mongodb://localhost:27017/")
 
 db = MongoDb(db_client=mongo_client,db_name="reminders_db",session_collection="agent_session_collection")
 session = Session(
-    aws_access_key_id="AKIA3AHH2NGRTY55WOIN",
-    aws_secret_access_key="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",
+    aws_access_key_id=os.getenv("KEY_ID"),
+    aws_secret_access_key=os.getenv("ACCESS_KEY"),
     region_name="us-east-1"
 )
 # Create an agent with Notion Tools
@@ -29,7 +30,7 @@ agent = Agent(model=
         db=db,
         read_chat_history=True,
         add_history_to_context=True,
-        num_history_runs=1,
+        num_history_runs=2,
         # AwsBedrock(
         #     id="nvidia.nemotron-super-3-120b",
         #     session=session
