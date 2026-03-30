@@ -32,8 +32,8 @@ def add_cors(app):
 app = FastAPI(title="Multi-User Reminders API")
 add_cors(app)
 app.include_router(router=auth_router)
-app.include_router(router=whatsapp_api, prefix="/whatsapp")
-app.include_router(router=api_router, prefix="/api")
+app.include_router(router=whatsapp_api)
+app.include_router(router=api_router)
 
 # MongoDB (update MONGO_URI env var for prod)
 mongo_client = MongoClient(os.getenv("MONGO_URI", "mongodb://localhost:27017"))

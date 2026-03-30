@@ -10,7 +10,7 @@ from agno.media import Audio,Image
 from ai import agent,voice_agent
 load_dotenv()
 
-app = APIRouter()
+app = APIRouter(prefix="/whatsapp")
 
 VERIFY_TOKEN = "pass@123!@#" #os.getenv("VERIFY_TOKEN")
 WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")

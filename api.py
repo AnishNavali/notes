@@ -7,7 +7,7 @@ import pytz
 import json
 from ai import agent
 
-router = APIRouter()
+router = APIRouter(prefix="/api")
 
 
 @router.get("/get_workspace")
