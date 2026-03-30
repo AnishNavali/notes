@@ -98,8 +98,8 @@ def signup(data:Signup,current_user:CurrentUser):
 class Msg(BaseModel):
     msg:str
 @router.post("/llm")
-async def llm(msg:Msg):#,current_user:CurrentUser):
-    email='anish.equilibrate@gmail.com'#current_user.get("email", "")
+async def llm(msg:Msg,current_user:CurrentUser):
+    email=current_user.get("email", "")
     user_data=db.query(collection="users",query={"email":email})
     from_number=user_data[0]['whatsapp_number']
     print("user data", user_data)
