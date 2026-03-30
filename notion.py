@@ -28,4 +28,4 @@ notion_agent = Agent(model=
     markdown=True,
 )
 
-notion_agent.print_response(input="can you read out the grocery list i have under the documents tag",stream=True)
+# notion_agent.print_response(input="can you read out the grocery list i have under the documents tag",stream=True)
