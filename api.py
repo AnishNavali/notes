@@ -4,6 +4,7 @@ import db
 from dependencies import CurrentUser
 from datetime import datetime
 import pytz
+import json
 from ai import agent
 
 router = APIRouter()
@@ -97,8 +98,8 @@ def signup(data:Signup,current_user:CurrentUser):
 class Msg(BaseModel):
     msg:str
 @router.post("/llm")
-async def llm(msg:Msg,current_user:CurrentUser):
-    email=current_user.get("email", "")
+async def llm(msg:Msg):#,current_user:CurrentUser):
+    email='anish.equilibrate@gmail.com'#current_user.get("email", "")
     user_data=db.query(collection="users",query={"email":email})
     from_number=user_data[0]['whatsapp_number']
     print("user data", user_data)
@@ -109,5 +110,19 @@ async def llm(msg:Msg,current_user:CurrentUser):
     response=agent.run(input=f"""<user_name>{user_data[0]['name']}</user_name>
                        <user_id>{user_data[0]['email']}
                       <message>{text}</message> 
-                     <datetime>{time}</datetime>""",session_id=from_number)
-    return response.content
+                      <response_structure>Return in a json structure: answer: Your answer, update: True if there is an update to the workspace else False</response_structure>
+                     <datetime>{time}</datetime>""",session_id=from_number,)
+    response_data=extract_json(response.content)
+    return response_data
+def extract_json(text: str):
+    decoder = json.JSONDecoder()
+    i = 0
+    while i < len(text):
+        if text[i] in ["{", "["]:
+            try:#decode json 
+                obj, _ = decoder.raw_decode(text[i:])
+                return obj
+            except json.JSONDecodeError:
+                pass
+        i += 1
+    return None
