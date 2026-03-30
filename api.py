@@ -84,7 +84,12 @@ def check_user(current_user:CurrentUser):
 @router.post("/signup")
 def signup(data:Signup,current_user:CurrentUser):
     email=current_user.get("email", "")#"anish.navali@gmail.com"
-    save=db.save(collection="users",key={"email":email},doc=dict(data))
+    whatsapp_number=data.country_code.split('+')[1]+data.phone
+    print(whatsapp_number)
+    doc=dict(data) 
+    doc["whatsapp_number"]=whatsapp_number
+    print(doc)
+    save=db.save(collection="users",key={"email":email},doc=doc)
     print(save)
     return True
 # signup(data=Signup(country_code="+91",phone="9606024155"))
