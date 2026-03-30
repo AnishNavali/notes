@@ -1,6 +1,7 @@
 from agno.agent import Agent
 # from agno.tools.notion import NotionTools
 from agno.models.aws import Claude, AwsBedrock 
+from agno.models.vllm import VLLM
 from boto3.session import Session
 from datetime import datetime
 from dotenv import load_dotenv
@@ -9,9 +10,9 @@ from agno.tools.crawl4ai import Crawl4aiTools
 from agno.db.mongo import MongoDb
 from tools import *
 load_dotenv()
-mongo_client = MongoClient("mongodb://localhost:27017")
+mongo_client = MongoClient("mongodb://localhost:27017/")
 
-db = MongoDb(db_client=mongo_client)
+db = MongoDb(db_client=mongo_client,db_name="reminders_db",session_collection="agent_session_collection")
 session = Session(
     aws_access_key_id="AKIA3AHH2NGRTY55WOIN",
     aws_secret_access_key="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",
@@ -44,12 +45,19 @@ agent = Agent(model=
  Notes of how to add to workspace:
      1. Call the get_component tool and pass the name of the component to get the format of the component to be added
      2. Add or update a component based on the situation
-Note: add reminders to the workspace as well as an event type.
+NOTE: ALWAYS ADD REMINDERS TO THE WORKSPACE.
  Use the tools given to carry out your work.
 """,
     tools=[set_reminder,get_workspace,add_to_workspace,update_component,get_component_format,DuckDuckGoTools()],
     markdown=True, 
 )
+voice_agent=Agent(model=
+             VLLM(id="Qwen/Qwen3-Omni-30B-A3B-Instruct",#"Qwen/Qwen3.5-35B-A3B-FP8",
+                       base_url="http://103.48.42.37:8000/v1",#"http://103.48.43.231:8000/v1",
+                       api_key="EMPTY"),
+                    #    instructions="give me only the contents of the scanned doc and nothing else",
+                       markdown=True,
+                       )
 # time=datetime.now(pytz.timezone('Asia/Kolkata'))
 # print(time)
 # agent.print_response(input=f"""<user_name>Anish</user_name>

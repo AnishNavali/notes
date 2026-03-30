@@ -85,9 +85,11 @@ def get_component_format(component_type:str):
         "table":{
     "type": "table",
     "title": "Title of the table",
+    "x":"x coordinate of the component ranges from 0-11",
+    "y":"y coordinate of the component starts from 0",
+    "w": "width of the component on a scale of 1-12",
+    "h": "height of the component on a scale of 1-12",
     "data": {
-      "w": "width of the component on a scale of 1-12",
-      "h": "height of the component on a scale of 1-12",
       "headers": ["list of column names"],
       "data": [
         ["Row name1", "rowdata1", "rowdata2"],
@@ -98,9 +100,11 @@ def get_component_format(component_type:str):
   "task-list":{
     "type": "task-list",
     "title": "Title of the task-list",
+    "x":"x coordinate of the component ranges from 0-11",
+    "y":"y coordinate of the component starts from 0",
+    "w": "width of the component on a scale of 1-12",
+    "h": "height of the component on a scale of 1-12",
     "data": {
-       "w": "width of the component on a scale of 1-12",
-      "h": "height of the component on a scale of 1-12",
       "tasks": [
         {
           "title": "name of the task",
@@ -113,9 +117,11 @@ def get_component_format(component_type:str):
   "todo":{
     "type": "todo",
     "title":"title of the todo list",
+    "x":"x coordinate of the component ranges from 0-11",
+    "y":"y coordinate of the component starts from 0",
+    "w": "width of the component on a scale of 1-12",
+    "h": "height of the component on a scale of 1-12",
     "data": {
-       "w": "width of the component on a scale of 1-12",
-      "h": "height of the component on a scale of 1-12",
       "items": [
         { "text": "Name of the to do item", "completed": False },
         { "text": "Name of the to do item", "completed": True },
@@ -125,9 +131,12 @@ def get_component_format(component_type:str):
   "journal":{
     "type": "journal",
     "title": "Name of the journal",
+    "x":"x coordinate of the component ranges from 0-11",
+    "y":"y coordinate of the component starts from 0",
+    "w": "width of the component on a scale of 1-12",
+    "h": "height of the component on a scale of 1-12",
     "data": {
-       "w": "width of the component on a scale of 1-12",
-      "h": "height of the component on a scale of 1-12",
+
       "date": "date as yyyy-mm-dd",
       "content": "Journal entry",
       "mood": "good",
@@ -136,9 +145,11 @@ def get_component_format(component_type:str):
   "goal":{
     "type": "goal",
     "title": "Name of the Goal",
+    "x":"x coordinate of the component ranges from 0-11",
+    "y":"y coordinate of the component starts from 0",
+    "w": "width of the component on a scale of 1-12",
+    "h": "height of the component on a scale of 1-12",
     "data": {
-       "w": "width of the component on a scale of 1-12",
-      "h": "height of the component on a scale of 1-12",
       "milestones": [
         { "text": "Goal item1 ", "completed": True },
         { "text": "Goal item 2", "completed": True },
@@ -148,9 +159,11 @@ def get_component_format(component_type:str):
   "event":{
     "type": "event",
     "title": "Name of the event",
+    "x":"x coordinate of the component ranges from 0-11",
+    "y":"y coordinate of the component starts from 0",
+    "w": "width of the component on a scale of 1-12",
+    "h": "height of the component on a scale of 1-12",
     "data": {
-       "w": "width of the component on a scale of 1-12",
-      "h": "height of the component on a scale of 1-12",
       "events": [
         { "title": "event item1", "date": "2026-03-25", "time": "09:00" },
         { "title": "event item 2", "date": "2026-03-25", "time": "14:00" },
@@ -160,9 +173,11 @@ def get_component_format(component_type:str):
   "commitment":{
     "type": "commitment",
     "title": "Name of the component",
+    "x":"x coordinate of the component ranges from 0-11",
+    "y":"y coordinate of the component starts from 0",
+    "w": "width of the component on a scale of 1-12",
+    "h": "height of the component on a scale of 1-12",
     "data": {
-       "w": "width of the component on a scale of 1-12",
-      "h": "height of the component on a scale of 1-12",
       "commitments": [
         { "text": "commitement item 1", "completed": True },
         { "text": "commitement item 2", "completed": False },
@@ -172,9 +187,11 @@ def get_component_format(component_type:str):
   "project":{
     "type": "project",
     "title": "name of the component",
+    "x":"x coordinate of the component ranges from 0-11",
+    "y":"y coordinate of the component starts from 0",
+    "w": "width of the component on a scale of 1-12",
+    "h": "height of the component on a scale of 1-12",
     "data": {
-      "w": 4,
-      "h": 4,
       "description":
         "description of the project , for example: Complete overhaul of the company website with modern design and improved UX",
       "progress": 50,
@@ -196,6 +213,17 @@ def get_component_format(component_type:str):
       ],
     },
   },
+  "reminder":{
+    "type": "reminder",
+    "title": "Reminders for me",
+    "x":"x coordinate of the component ranges from 0-11",
+    "y":"y coordinate of the component starts from 0",
+    "w": "width of the component on a scale of 1-12",
+    "h": "height of the component on a scale of 1-12",
+    "data": {
+      "reminders": ["Reminder1","Reminder2"],
+    },
+  }
     }
     return components[component_type]
 # print(get_workspace(user_id="Anish"))

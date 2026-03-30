@@ -2,6 +2,9 @@ from fastapi import APIRouter, Request
 from pydantic import BaseModel
 import db
 from dependencies import CurrentUser
+from datetime import datetime
+import pytz
+from ai import agent
 
 router = APIRouter()
 
@@ -86,3 +89,20 @@ def signup(data:Signup,current_user:CurrentUser):
     return True
 # signup(data=Signup(country_code="+91",phone="9606024155"))
 # print(check_user())
+class Msg(BaseModel):
+    msg:str
+@router.post("/llm")
+async def llm(msg:Msg,current_user:CurrentUser):
+    email=current_user.get("email", "")
+    user_data=db.query(collection="users",query={"email":email})
+    from_number=user_data[0]['whatsapp_number']
+    print("user data", user_data)
+    
+    text=msg.msg
+    
+    time=datetime.now(pytz.timezone('Asia/Kolkata'))
+    response=agent.run(input=f"""<user_name>{user_data[0]['name']}</user_name>
+                       <user_id>{user_data[0]['email']}
+                      <message>{text}</message> 
+                     <datetime>{time}</datetime>""",session_id=from_number)
+    return response.content
