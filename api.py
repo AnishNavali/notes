@@ -115,6 +115,10 @@ async def llm(msg:Msg,current_user:CurrentUser):
                      <datetime>{time}</datetime>""",session_id=from_number,)
     response_data=extract_json(response.content)
     return response_data
+
+@router.get("/test")
+def test():
+    return "True"
 def extract_json(text: str):
     decoder = json.JSONDecoder()
     i = 0
