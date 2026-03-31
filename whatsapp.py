@@ -73,17 +73,24 @@ async def receive_message(request: Request):
 
 # --- Text Handler ---
 async def handle_text(text: str,from_number:str) -> str:
-    user_data=db.query(collection="users",query={"whatsapp_number":from_number})
-    print("user data", user_data)
-    print("from",from_number)
-    time=datetime.now(pytz.timezone('Asia/Kolkata'))
-    response=agent.run(input=f"""<user_name>{user_data[0]['name']}</user_name>
-                       <user_id>{user_data[0]['email']}
-                      <message>{text}</message> 
-                     <datetime>{time}</datetime>""",session_id=from_number)
-    tokens=response.metrics.to_dict()
-    db.inc(collection="users",key={"whatsapp_number":from_number},doc={"input_tokens":tokens["input_tokens"],"output_tokens":tokens["output_tokens"]})
-    return response.content
+    if text.lower() =="annie or you ok":
+        return """I have been hit by ... I have been hit by
+        .
+        .
+        .
+        A smooth criminal 🕴"""
+    else:
+        user_data=db.query(collection="users",query={"whatsapp_number":from_number})
+        print("user data", user_data)
+        print("from",from_number)
+        time=datetime.now(pytz.timezone('Asia/Kolkata'))
+        response=agent.run(input=f"""<user_name>{user_data[0]['name']}</user_name>
+                        <user_id>{user_data[0]['email']}
+                        <message>{text}</message> 
+                        <datetime>{time}</datetime>""",session_id=from_number)
+        tokens=response.metrics.to_dict()
+        db.inc(collection="users",key={"whatsapp_number":from_number},doc={"input_tokens":tokens["input_tokens"],"output_tokens":tokens["output_tokens"]})
+        return response.content
 
 # --- Image Handler ---
 async def handle_image(image_id: str, caption: str, from_number : str) -> str:
