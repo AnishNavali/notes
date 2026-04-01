@@ -74,7 +74,7 @@ async def receive_message(request: Request):
 # --- Text Handler ---
 async def handle_text(text: str,from_number:str) -> str:
     if text.lower() =="annie are you ok":
-        return """I have been hit by ... I have been hit by
+        return """I have been hit by ... I have been struck by
         .
         .
         .
@@ -85,7 +85,8 @@ async def handle_text(text: str,from_number:str) -> str:
         print("from",from_number)
         time=datetime.now(pytz.timezone('Asia/Kolkata'))
         response=agent.run(input=f"""<user_name>{user_data[0]['name']}</user_name>
-                        <user_id>{user_data[0]['email']}
+                        <user_id>{user_data[0]['email']}</user_id>
+                        <plaform>whatsapp</platform>
                         <message>{text}</message> 
                         <datetime>{time}</datetime>""",session_id=from_number)
         tokens=response.metrics.to_dict()
@@ -104,7 +105,8 @@ async def handle_image(image_id: str, caption: str, from_number : str) -> str:
     print("from",from_number)
     time=datetime.now(pytz.timezone('Asia/Kolkata'))
     response=agent.run(input=f"""<user_name>{user_data[0]['name']}</user_name>
-                       <user_id>{user_data[0]['email']}
+                       <user_id>{user_data[0]['email']}</user_id>
+                       <plaform>whatsapp</platform>
                       <message>{caption}</message> 
                      <datetime>{time}</datetime>""",session_id=from_number,images=[Image(content=image_bytes)])
     return response.content
@@ -134,7 +136,8 @@ async def handle_audio(audio_id: str, from_number :str) -> str:
     print(text.content)
     time=datetime.now(pytz.timezone('Asia/Kolkata'))
     response=agent.run(input=f"""<user_name>{user_data[0]['name']}</user_name>
-                       <user_id>{user_data[0]['email']}
+                       <user_id>{user_data[0]['email']}</user_id>
+                       <plaform>whatsapp voice note</platform>
                       <message>{text.content}</message> 
                      <datetime>{time}</datetime>""",session_id=from_number)
     return response.content

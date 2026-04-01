@@ -109,7 +109,8 @@ async def llm(msg:Msg,current_user:CurrentUser):
     
     time=datetime.now(pytz.timezone('Asia/Kolkata'))
     response=agent.run(input=f"""<user_name>{user_data[0]['name']}</user_name>
-                       <user_id>{user_data[0]['email']}
+                       <user_id>{user_data[0]['email']}</user_id>
+                       <platform>web</platform>
                       <message>{text}</message> 
                      <datetime>{time}</datetime>""",session_id=from_number)
                         #   <response_structure>Return in a json structure: answer: Your answer, update: True if there is an update to the workspace else False</response_structure>
