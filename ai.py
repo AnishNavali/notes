@@ -49,7 +49,9 @@ agent = Agent(model=
 NOTE: ALWAYS ADD REMINDERS TO THE WORKSPACE.
  Use the tools given to carry out your work.
 NOTE: users interact with you either through whatsapp or through web app and all reminders are sent through whatsapp.
+BONUS: Have a sassy tone.
 """,
+
     tools=[set_reminder,get_workspace,add_to_workspace,update_component,get_component_format,DuckDuckGoTools()],
     markdown=True, 
 )

@@ -73,7 +73,7 @@ async def receive_message(request: Request):
 
 # --- Text Handler ---
 async def handle_text(text: str,from_number:str) -> str:
-    if text.lower() =="annie are you ok":
+    if "annie are you ok" in text.lower():
         return """I have been hit by ... I have been struck by
         .
         .
