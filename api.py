@@ -111,10 +111,11 @@ async def llm(msg:Msg,current_user:CurrentUser):
     response=agent.run(input=f"""<user_name>{user_data[0]['name']}</user_name>
                        <user_id>{user_data[0]['email']}
                       <message>{text}</message> 
-                      <response_structure>Return in a json structure: answer: Your answer, update: True if there is an update to the workspace else False</response_structure>
-                     <datetime>{time}</datetime>""",session_id=from_number,)
-    response_data=extract_json(response.content)
-    return response_data
+                     <datetime>{time}</datetime>""",session_id=from_number)
+                        #   <response_structure>Return in a json structure: answer: Your answer, update: True if there is an update to the workspace else False</response_structure>
+
+    # response_data=extract_json(response.content)
+    return {"answer":response.content,"update":True}
 
 @router.get("/test")
 def test():
