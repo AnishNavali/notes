@@ -48,6 +48,7 @@ agent = Agent(model=
      2. Add or update a component based on the situation
 NOTE: ALWAYS ADD REMINDERS TO THE WORKSPACE.
  Use the tools given to carry out your work.
+NOTE: users interact with you either through whatsapp or through web app and all reminders are sent through whatsapp.
 """,
     tools=[set_reminder,get_workspace,add_to_workspace,update_component,get_component_format,DuckDuckGoTools()],
     markdown=True, 

@@ -66,9 +66,9 @@ def heartbeat_check_reminders():
 
 # Beat schedule (run: celery -A celery_app beat)
 celery.conf.beat_schedule = {
-    'scan-reminders-every-5min': {
+    'scan-reminders-every-1min': {
         'task': 'tasks.heartbeat_check_reminders',
-        'schedule': 300.0,  # 5 minutes
+        'schedule': 60.0,  # 1 minute
     },
 }
 def send_message(to: str, body: str):
