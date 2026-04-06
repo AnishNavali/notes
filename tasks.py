@@ -6,6 +6,9 @@ from datetime import datetime
 import db as database
 import httpx
 import pytz
+import db
+from agno.media import Audio,Image
+from ai import agent,voice_agent
 from dotenv import load_dotenv
 import os
 load_dotenv()
@@ -71,6 +74,68 @@ celery.conf.beat_schedule = {
         'schedule': 60.0,  # 1 minute
     },
 }
+
+@celery.task(bind=True)
+async def handle_text(self,text: str,from_number:str) -> str:
+    if "annie are you ok" in text.lower():
+        return """I have been hit by ... I have been struck by
+        .
+        .
+        .
+        A smooth criminal 🕴"""
+    else:
+        user_data=db.query(collection="users",query={"whatsapp_number":from_number})
+        print("user data", user_data)
+        print("from",from_number)
+        time=datetime.now(pytz.timezone('Asia/Kolkata'))
+        response=agent.run(input=f"""<user_name>{user_data[0]['name']}</user_name>
+                        <user_id>{user_data[0]['email']}</user_id>
+                        <plaform>whatsapp</platform>
+                        <message>{text}</message> 
+                        <datetime>{time}</datetime>""",session_id=from_number)
+        tokens=response.metrics.to_dict()
+        db.inc(collection="users",key={"whatsapp_number":from_number},doc={"input_tokens":tokens["input_tokens"],"output_tokens":tokens["output_tokens"]})
+        send_message(to=from_number,body=response.content)
+        # return response.content
+@celery.task(bind=True)
+async def handle_image(self,image_id: str, caption: str, from_number : str) -> str:
+    # Step 1: Get the image download URL from Meta
+    media_url = await get_media_url(image_id)
+
+    # Step 2: Download the image bytes
+    image_bytes = await download_media(media_url)
+    user_data=db.query(collection="users",query={"whatsapp_number":from_number})
+    print("user data", user_data)
+    print("from",from_number)
+    time=datetime.now(pytz.timezone('Asia/Kolkata'))
+    response=agent.run(input=f"""<user_name>{user_data[0]['name']}</user_name>
+                       <user_id>{user_data[0]['email']}</user_id>
+                       <plaform>whatsapp</platform>
+                      <message>{caption}</message> 
+                     <datetime>{time}</datetime>""",session_id=from_number,images=[Image(content=image_bytes)])
+    send_message(to=from_number,body=response.content)
+
+@celery.task(bind=True)
+async def handle_audio(self,audio_id: str, from_number :str) -> str:
+    # Step 1: Get the audio download URL from Meta
+    media_url = await get_media_url(audio_id)
+    # if not media_url:
+    #     return "❌ Couldn't retrieve your audio. Please try again."
+
+    # Step 2: Download the audio bytes
+    audio_bytes = await download_media(media_url)
+    user_data=db.query(collection="users",query={"whatsapp_number":from_number})
+    print("user data", user_data)
+    print("from",from_number)
+    text=voice_agent.run(input="transcribe the audio",audio=[Audio(content=audio_bytes, mime_type="audio/ogg")])
+    print(text.content)
+    time=datetime.now(pytz.timezone('Asia/Kolkata'))
+    response=agent.run(input=f"""<user_name>{user_data[0]['name']}</user_name>
+                       <user_id>{user_data[0]['email']}</user_id>
+                       <plaform>whatsapp voice note</platform>
+                      <message>{text.content}</message> 
+                     <datetime>{time}</datetime>""",session_id=from_number)
+
 def send_message(to: str, body: str):
     headers = {
         "Authorization": f"Bearer {WHATSAPP_TOKEN}",
@@ -87,3 +152,22 @@ def send_message(to: str, body: str):
     with httpx.Client() as client:
         response =  client.post(WHATSAPP_API_URL, json=payload, headers=headers)
         return response.json()
+    
+async def get_media_url(media_id: str) -> str | None:
+    """Fetch the temporary download URL for a media object from Meta."""
+    url = f"https://graph.facebook.com/v21.0/{media_id}"
+    headers = {"Authorization": f"Bearer {WHATSAPP_TOKEN}"}
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, headers=headers)
+        data = response.json()
+        return data.get("url")  # Temporary URL, valid for ~5 minutes
+
+
+async def download_media(media_url: str) -> bytes | None:
+    """Download the actual media bytes using the temporary URL."""
+    headers = {"Authorization": f"Bearer {WHATSAPP_TOKEN}"}
+    async with httpx.AsyncClient() as client:
+        response = await client.get(media_url, headers=headers)
+        if response.status_code == 200:
+            return response.content
+        return None
