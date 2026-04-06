@@ -50,20 +50,20 @@ async def receive_message(request: Request):
 
         if msg_type == "text":
             text = message["text"]["body"]
-            await send_reaction(to=from_number,message_id=msg_id,emoji="💬")
+            await send_reaction(to=from_number,message_id=msg_id)
             reply = await handle_text.delay(text,from_number)
             # await send_message(from_number, reply)
 
         elif msg_type == "image":
             image_id = message["image"]["id"]
             caption = message["image"].get("caption", "")
-            await send_reaction(to=from_number,message_id=msg_id,emoji="💬")
+            await send_reaction(to=from_number,message_id=msg_id)
             reply = await handle_image.delay(image_id, caption, from_number)
             # await send_message(from_number, reply)
 
         elif msg_type == "audio":
             audio_id = message["audio"]["id"]
-            await send_reaction(to=from_number,message_id=msg_id,emoji="💬")
+            await send_reaction(to=from_number,message_id=msg_id)
             reply = await handle_audio.delay(audio_id, from_number)
             # await send_message(from_number, reply)
 
@@ -194,14 +194,11 @@ async def send_message(to: str, body: str):
         response = await client.post(WHATSAPP_API_URL, json=payload, headers=headers)
         return response.json()
     
-async def send_reaction(to: str, message_id: str, emoji: str):
+async def send_reaction(to: str, message_id: str):
     payload = {
         "messaging_product": "whatsapp",
-        "recipient_type": "individual",
         "status":"read",
-        "to": to,
-        "type": "reaction",
-        "reaction": {"message_id": message_id, "emoji": emoji},
+      "message_id": message_id,
     }
     async with httpx.AsyncClient() as client:
         await client.post(WHATSAPP_API_URL, json=payload, headers={
