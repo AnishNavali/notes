@@ -27,9 +27,9 @@ celery = Celery(
 )
 
 # MongoDB
-# mongo_client = MongoClient("mongodb://localhost:27017")
-# db = mongo_client["reminders_db"]
-# reminders_coll = db["reminders"]
+mongo_client = MongoClient("mongodb://localhost:27017")
+db = mongo_client["reminders_db"]
+reminders_coll = db["reminders"]
 
 @celery.task
 def trigger_reminder(message: str, reminder_id: str, user_id: str):
@@ -63,10 +63,13 @@ def heartbeat_check_reminders():
     #     "status": "scheduled",
     #     "due_datetime": {"$lte": now}
     # }))
-    due_reminders = list(database.query(
-    collection="reminders",
-    query={"status": "scheduled", "due_datetime": {"$lte": now}})
-)
+    coll = database.get_collection("reminders")
+    due_reminders = list(coll.find({
+        "status": "scheduled",
+        "due_datetime": {"$lte": now}
+    }))
+
+    print(due_reminders)
     triggered = 0
     for r in due_reminders:
         trigger_reminder.delay(r["message"], str(r["_id"]), r["user_id"])
