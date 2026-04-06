@@ -84,7 +84,7 @@ def handle_text(self,text: str,from_number:str) -> str:
         .
         A smooth criminal 🕴"""
     else:
-        user_data=db.query(collection="users",query={"whatsapp_number":from_number})
+        user_data= database.query(collection="users",query={"whatsapp_number":from_number})
         print("user data", user_data)
         print("from",from_number)
         time=datetime.now(pytz.timezone('Asia/Kolkata'))
@@ -94,7 +94,7 @@ def handle_text(self,text: str,from_number:str) -> str:
                         <message>{text}</message> 
                         <datetime>{time}</datetime>""",session_id=from_number)
         tokens=response.metrics.to_dict()
-        db.inc(collection="users",key={"whatsapp_number":from_number},doc={"input_tokens":tokens["input_tokens"],"output_tokens":tokens["output_tokens"]})
+        database.inc(collection="users",key={"whatsapp_number":from_number},doc={"input_tokens":tokens["input_tokens"],"output_tokens":tokens["output_tokens"]})
         send_message(to=from_number,body=response.content)
         # return response.content
 @celery.task(bind=True)
@@ -104,7 +104,7 @@ def handle_image(self,image_id: str, caption: str, from_number : str) -> str:
 
     # Step 2: Download the image bytes
     image_bytes = download_media(media_url)
-    user_data=db.query(collection="users",query={"whatsapp_number":from_number})
+    user_data= database.query(collection="users",query={"whatsapp_number":from_number})
     print("user data", user_data)
     print("from",from_number)
     time=datetime.now(pytz.timezone('Asia/Kolkata'))
@@ -124,7 +124,7 @@ def handle_audio(self,audio_id: str, from_number :str) -> str:
 
     # Step 2: Download the audio bytes
     audio_bytes =  download_media(media_url)
-    user_data=db.query(collection="users",query={"whatsapp_number":from_number})
+    user_data= database.query(collection="users",query={"whatsapp_number":from_number})
     print("user data", user_data)
     print("from",from_number)
     text=voice_agent.run(input="transcribe the audio",audio=[Audio(content=audio_bytes, mime_type="audio/ogg")])
