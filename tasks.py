@@ -76,7 +76,7 @@ celery.conf.beat_schedule = {
 }
 
 @celery.task(bind=True)
-async def handle_text(self,text: str,from_number:str) -> str:
+def handle_text(self,text: str,from_number:str) -> str:
     if "annie are you ok" in text.lower():
         return """I have been hit by ... I have been struck by
         .
@@ -98,12 +98,12 @@ async def handle_text(self,text: str,from_number:str) -> str:
         send_message(to=from_number,body=response.content)
         # return response.content
 @celery.task(bind=True)
-async def handle_image(self,image_id: str, caption: str, from_number : str) -> str:
+def handle_image(self,image_id: str, caption: str, from_number : str) -> str:
     # Step 1: Get the image download URL from Meta
-    media_url = await get_media_url(image_id)
+    media_url = get_media_url(image_id)
 
     # Step 2: Download the image bytes
-    image_bytes = await download_media(media_url)
+    image_bytes = download_media(media_url)
     user_data=db.query(collection="users",query={"whatsapp_number":from_number})
     print("user data", user_data)
     print("from",from_number)
@@ -116,14 +116,14 @@ async def handle_image(self,image_id: str, caption: str, from_number : str) -> s
     send_message(to=from_number,body=response.content)
 
 @celery.task(bind=True)
-async def handle_audio(self,audio_id: str, from_number :str) -> str:
+def handle_audio(self,audio_id: str, from_number :str) -> str:
     # Step 1: Get the audio download URL from Meta
-    media_url = await get_media_url(audio_id)
+    media_url =  get_media_url(audio_id)
     # if not media_url:
     #     return "❌ Couldn't retrieve your audio. Please try again."
 
     # Step 2: Download the audio bytes
-    audio_bytes = await download_media(media_url)
+    audio_bytes =  download_media(media_url)
     user_data=db.query(collection="users",query={"whatsapp_number":from_number})
     print("user data", user_data)
     print("from",from_number)
@@ -153,21 +153,21 @@ def send_message(to: str, body: str):
         response =  client.post(WHATSAPP_API_URL, json=payload, headers=headers)
         return response.json()
     
-async def get_media_url(media_id: str) -> str | None:
+def get_media_url(media_id: str) -> str | None:
     """Fetch the temporary download URL for a media object from Meta."""
     url = f"https://graph.facebook.com/v21.0/{media_id}"
     headers = {"Authorization": f"Bearer {WHATSAPP_TOKEN}"}
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url, headers=headers)
+    with httpx.Client() as client:
+        response = client.get(url, headers=headers)
         data = response.json()
         return data.get("url")  # Temporary URL, valid for ~5 minutes
 
 
-async def download_media(media_url: str) -> bytes | None:
+def download_media(media_url: str) -> bytes | None:
     """Download the actual media bytes using the temporary URL."""
     headers = {"Authorization": f"Bearer {WHATSAPP_TOKEN}"}
-    async with httpx.AsyncClient() as client:
-        response = await client.get(media_url, headers=headers)
+    with httpx.Client() as client:
+        response =  client.get(media_url, headers=headers)
         if response.status_code == 200:
             return response.content
         return None

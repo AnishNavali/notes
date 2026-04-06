@@ -51,20 +51,20 @@ async def receive_message(request: Request):
         if msg_type == "text":
             text = message["text"]["body"]
             await send_reaction(to=from_number,message_id=msg_id)
-            reply = await handle_text.delay(text,from_number)
+            reply = handle_text.delay(text,from_number)
             # await send_message(from_number, reply)
 
         elif msg_type == "image":
             image_id = message["image"]["id"]
             caption = message["image"].get("caption", "")
             await send_reaction(to=from_number,message_id=msg_id)
-            reply = await handle_image.delay(image_id, caption, from_number)
+            reply =  handle_image.delay(image_id, caption, from_number)
             # await send_message(from_number, reply)
 
         elif msg_type == "audio":
             audio_id = message["audio"]["id"]
             await send_reaction(to=from_number,message_id=msg_id)
-            reply = await handle_audio.delay(audio_id, from_number)
+            reply =  handle_audio.delay(audio_id, from_number)
             # await send_message(from_number, reply)
 
         else:
