@@ -108,11 +108,13 @@ async def llm(msg:Msg,current_user:CurrentUser):
     text=msg.msg
     
     time=datetime.now(pytz.timezone('Asia/Kolkata'))
-    response=agent.run(input=f"""<user_name>{user_data[0]['name']}</user_name>
-                       <user_id>{user_data[0]['email']}</user_id>
-                       <platform>web</platform>
-                      <message>{text}</message> 
-                     <datetime>{time}</datetime>""",session_id=from_number)
+    response=agent.run(input=f"""
+    <user_name>{user_data[0]['name']}</user_name>
+    <user_id>{user_data[0]['email']}</user_id>
+    <password>{user_data[0]['password']}</password>
+    <platform>web</platform>
+    <message>{text}</message> 
+    <datetime>{time}</datetime>""",session_id=from_number)
                         #   <response_structure>Return in a json structure: answer: Your answer, update: True if there is an update to the workspace else False</response_structure>
 
     # response_data=extract_json(response.content)
@@ -121,6 +123,15 @@ async def llm(msg:Msg,current_user:CurrentUser):
 @router.get("/test")
 def test():
     return "True"
+
+
+@router.post("/update_settings")
+async def update_settings(data:dict,current_user:CurrentUser):
+    email=current_user.get("email", "")
+    update=db.save(collection="users",key={"email":email},doc=data)
+    if update:
+        return True
+    
 def extract_json(text: str):
     decoder = json.JSONDecoder()
     i = 0
