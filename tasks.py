@@ -63,9 +63,9 @@ def heartbeat_check_reminders():
     #     "status": "scheduled",
     #     "due_datetime": {"$lte": now}
     # }))
-    due_reminders = database.query(
+    due_reminders = list(database.query(
     collection="reminders",
-    query={"status": "scheduled", "due_datetime": {"$lte": now}}
+    query={"status": "scheduled", "due_datetime": {"$lte": now}})
 )
     triggered = 0
     for r in due_reminders:
