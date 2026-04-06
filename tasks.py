@@ -6,7 +6,7 @@ from datetime import datetime
 import db as database
 import httpx
 import pytz
-import db
+# import db
 from agno.media import Audio,Image
 from ai import agent,voice_agent
 from dotenv import load_dotenv
@@ -27,9 +27,9 @@ celery = Celery(
 )
 
 # MongoDB
-mongo_client = MongoClient("mongodb://localhost:27017")
-db = mongo_client["reminders_db"]
-reminders_coll = db["reminders"]
+# mongo_client = MongoClient("mongodb://localhost:27017")
+# db = mongo_client["reminders_db"]
+# reminders_coll = db["reminders"]
 
 @celery.task
 def trigger_reminder(message: str, reminder_id: str, user_id: str):
@@ -39,13 +39,18 @@ def trigger_reminder(message: str, reminder_id: str, user_id: str):
     print(f"⏰ {now.strftime('%Y-%m-%d %H:%M:%S IST')}")
     
     # Update status
-    reminders_coll.update_one(
-        {"_id": ObjectId(reminder_id)},
-        {"$set": {
-            "status": "triggered",
-            "triggered_at": datetime.now()
-        }}
-    )
+    # reminders_coll.update_one(
+    #     {"_id": ObjectId(reminder_id)},
+    #     {"$set": {
+    #         "status": "triggered",
+    #         "triggered_at": datetime.now()
+    #     }}
+    # )
+    database.save(
+    collection="reminders",
+    key={"_id": ObjectId(reminder_id)},
+    doc={"status": "triggered", "triggered_at": datetime.now()}
+)
     whatsapp_number=database.get_one(collection="users",key={"email":user_id})["whatsapp_number"]
     send_message(to=whatsapp_number,body=f"Reminder : {message}")
     return f"Triggered {reminder_id}"
@@ -54,11 +59,14 @@ def trigger_reminder(message: str, reminder_id: str, user_id: str):
 def heartbeat_check_reminders():
     """Scan all users' due reminders every 5min (for production)"""
     now = datetime.now(pytz.timezone('Asia/Kolkata'))
-    due_reminders = list(reminders_coll.find({
-        "status": "scheduled",
-        "due_datetime": {"$lte": now}
-    }))
-    
+    # due_reminders = list(reminders_coll.find({
+    #     "status": "scheduled",
+    #     "due_datetime": {"$lte": now}
+    # }))
+    due_reminders = database.query(
+    collection="reminders",
+    query={"status": "scheduled", "due_datetime": {"$lte": now}}
+)
     triggered = 0
     for r in due_reminders:
         trigger_reminder.delay(r["message"], str(r["_id"]), r["user_id"])
