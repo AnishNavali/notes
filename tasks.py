@@ -101,6 +101,7 @@ def handle_text(self,text: str,from_number:str) -> str:
         time=datetime.now(pytz.timezone('Asia/Kolkata'))
         response=agent.run(input=f"""<user_name>{user_data[0]['name']}</user_name>
                         <user_id>{user_data[0]['email']}</user_id>
+                        <password>{user_data[0]['password']}</password>
                         <plaform>whatsapp</platform>
                         <message>{text}</message> 
                         <datetime>{time}</datetime>""",session_id=from_number)
@@ -121,6 +122,7 @@ def handle_image(self,image_id: str, caption: str, from_number : str) -> str:
     time=datetime.now(pytz.timezone('Asia/Kolkata'))
     response=agent.run(input=f"""<user_name>{user_data[0]['name']}</user_name>
                        <user_id>{user_data[0]['email']}</user_id>
+                       <password>{user_data[0]['password']}</password>
                        <plaform>whatsapp</platform>
                       <message>{caption}</message> 
                      <datetime>{time}</datetime>""",session_id=from_number,images=[Image(content=image_bytes)])
@@ -143,6 +145,7 @@ def handle_audio(self,audio_id: str, from_number :str) -> str:
     time=datetime.now(pytz.timezone('Asia/Kolkata'))
     response=agent.run(input=f"""<user_name>{user_data[0]['name']}</user_name>
                        <user_id>{user_data[0]['email']}</user_id>
+                       <password>{user_data[0]['password']}</password>
                        <plaform>whatsapp voice note</platform>
                       <message>{text.content}</message> 
                      <datetime>{time}</datetime>""",session_id=from_number)
