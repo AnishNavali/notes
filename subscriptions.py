@@ -26,7 +26,7 @@ from pydantic import BaseModel
 import db
 from dependencies import CurrentUser
 
-router = APIRouter(prefix="/subscriptions", tags=["subscriptions"])
+router = APIRouter(prefix="/api/subscriptions", tags=["subscriptions"])
 
 # ---------------------------------------------------------------------------
 # Config
