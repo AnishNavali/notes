@@ -274,6 +274,79 @@ def create_subscription(data: CreateSubscriptionRequest, current_user: CurrentUs
     }
 
 
+class ConfirmPaymentRequest(BaseModel):
+    razorpay_payment_id: str
+    razorpay_subscription_id: str
+    razorpay_signature: str
+
+
+@router.post("/confirm")
+def confirm_payment(data: ConfirmPaymentRequest, current_user: CurrentUser):
+    """
+    Verify the Razorpay payment signature returned to the frontend handler
+    and activate the subscription immediately — without waiting for the webhook.
+
+    The webhook (subscription.activated) still fires afterward and acts as a
+    safety net. If both run, the second write is idempotent (same values).
+
+    Signature formula (Razorpay docs):
+        HMAC-SHA256(payment_id + "|" + subscription_id, RAZORPAY_KEY_SECRET)
+    """
+    if not RAZORPAY_KEY_SECRET:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Razorpay is not configured.",
+        )
+
+    # --- verify signature -------------------------------------------------
+    expected = hmac.new(
+        RAZORPAY_KEY_SECRET.encode("utf-8"),
+        msg=f"{data.razorpay_payment_id}|{data.razorpay_subscription_id}".encode(
+            "utf-8"
+        ),
+        digestmod=hashlib.sha256,
+    ).hexdigest()
+
+    if not hmac.compare_digest(expected, data.razorpay_signature):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid payment signature. Payment could not be verified.",
+        )
+
+    # --- signature valid — activate subscription -------------------------
+    email = current_user.get("email", "")
+    sub = _get_subscription(email)
+
+    # Guard: only activate if this subscription ID matches what we have on file
+    if sub.get("razorpay_subscription_id") != data.razorpay_subscription_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Subscription ID does not match the current user's subscription.",
+        )
+
+    now = datetime.now(timezone.utc)
+    sub["status"] = "active"
+    sub["cancel_at_period_end"] = False
+    sub["grace_period_end"] = None
+    _set_subscription(email, sub)
+
+    # Record the confirmed payment
+    _record_payment(
+        email=email,
+        event="payment.confirmed",
+        razorpay_subscription_id=data.razorpay_subscription_id,
+        razorpay_payment_id=data.razorpay_payment_id,
+        status="captured",
+        plan=sub.get("plan"),
+    )
+
+    return {
+        "verified": True,
+        "plan": sub.get("plan"),
+        "status": sub.get("status"),
+    }
+
+
 @router.post("/cancel")
 def cancel_subscription(current_user: CurrentUser):
     """
