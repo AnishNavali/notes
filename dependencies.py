@@ -1,15 +1,24 @@
 """
-dependencies.py – Reusable FastAPI dependencies for authentication.
+dependencies.py – Reusable FastAPI dependencies for authentication and plan gating.
 
 Usage in route handlers:
-    from dependencies import CurrentUser
+    from dependencies import CurrentUser, requires_plan
 
     @router.get("/protected")
     async def protected(user: CurrentUser):
         return {"hello": user["email"]}
+
+    @router.get("/pro-only", dependencies=[Depends(requires_plan("pro"))])
+    async def pro_feature(user: CurrentUser):
+        ...
+
+    @router.get("/paid", dependencies=[Depends(requires_plan("basic", "pro"))])
+    async def paid_feature(user: CurrentUser):
+        ...
 """
 
 import os
+from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
@@ -58,3 +67,66 @@ async def get_current_user(
 
 # Convenience type alias for route signatures
 CurrentUser = Annotated[dict, Depends(get_current_user)]
+
+
+# ---------------------------------------------------------------------------
+# Plan gating
+# ---------------------------------------------------------------------------
+
+
+def requires_plan(*plans: str):
+    """
+    Returns a FastAPI dependency that enforces subscription plan access.
+
+    Raises HTTP 403 if:
+      - The user's plan is not in the allowed `plans` tuple
+      - The subscription status is 'expired'
+      - The subscription is in 'grace_period' and the grace period has passed
+
+    Usage:
+        @router.get("/pro-only", dependencies=[Depends(requires_plan("pro"))])
+        @router.get("/any-paid", dependencies=[Depends(requires_plan("basic", "pro"))])
+    """
+
+    async def _check(user: dict = Depends(get_current_user)):
+        sub = user.get("subscription") or {}
+        plan = sub.get("plan", "free")
+        sub_status = sub.get("status", "active")
+        grace_period_end = sub.get("grace_period_end")
+        now = datetime.now(timezone.utc)
+
+        # Hard expired — no access regardless of plan
+        if sub_status == "expired":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Your subscription has expired. Please renew to access this feature.",
+            )
+
+        # Grace period — check if it has lapsed
+        if sub_status == "grace_period":
+            if grace_period_end and now > _ensure_tz(grace_period_end):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Your grace period has ended. Please update your payment method.",
+                )
+            # Still within grace period — allow access
+
+        # Plan check
+        if plan not in plans:
+            required = " or ".join(f"'{p}'" for p in plans)
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"This feature requires a {required} plan. You are on the '{plan}' plan.",
+            )
+
+    return _check
+
+
+def _ensure_tz(dt) -> datetime:
+    """Ensure a datetime is timezone-aware (assume UTC if naive)."""
+    if isinstance(dt, datetime):
+        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    # Handle string datetimes stored by MongoDB serialisation
+    if isinstance(dt, str):
+        return datetime.fromisoformat(dt.replace("Z", "+00:00"))
+    return datetime.now(timezone.utc)

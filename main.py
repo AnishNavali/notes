@@ -1,22 +1,16 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from datetime import datetime
-from pymongo import MongoClient
 from typing import List
 import pytz
 from bson import ObjectId
 from whatsapp import app as whatsapp_api
 from api import router as api_router
 from auth import router as auth_router
+from subscriptions import router as subscriptions_router
 from fastapi.middleware.cors import CORSMiddleware
 from dependencies import CurrentUser
-import os
-
-# ALLOWED_ORIGINS = [
-#     o.strip()
-#     for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
-#     if o.strip()
-# ]
+import db as database
 
 
 def add_cors(app):
@@ -32,13 +26,9 @@ def add_cors(app):
 app = FastAPI(title="Multi-User Reminders API")
 add_cors(app)
 app.include_router(router=auth_router)
+app.include_router(router=subscriptions_router)
 app.include_router(router=whatsapp_api)
 app.include_router(router=api_router)
-
-# MongoDB (update MONGO_URI env var for prod)
-mongo_client = MongoClient(os.getenv("MONGO_URI", "mongodb://localhost:27017"))
-db = mongo_client["reminders_db"]
-reminders_coll = db["reminders"]
 
 
 class ReminderIn(BaseModel):
@@ -78,7 +68,7 @@ async def set_reminder(reminder: ReminderIn, current_user: CurrentUser):
             "delay_seconds": delay_seconds,
             "task_id": None,
         }
-        result = reminders_coll.insert_one(reminder_doc)
+        result = database.insert(collection="reminders", doc=reminder_doc)
         rid = str(result.inserted_id)
 
         print(f"Scheduled reminder {rid} for user {user_id} in {delay_seconds}s")
@@ -103,6 +93,7 @@ async def set_reminder(reminder: ReminderIn, current_user: CurrentUser):
 async def list_my_reminders(current_user: CurrentUser):
     """List all reminders for the authenticated user."""
     user_id = current_user["_id"]
+    reminders_coll = database.get_collection("reminders")
     docs = list(reminders_coll.find({"user_id": user_id}).sort("created_at", -1))
     return [
         ReminderOut(
@@ -122,6 +113,7 @@ async def list_my_reminders(current_user: CurrentUser):
 async def get_reminder(reminder_id: str, current_user: CurrentUser):
     """Fetch a single reminder by ID (must belong to the authenticated user)."""
     try:
+        reminders_coll = database.get_collection("reminders")
         reminder = reminders_coll.find_one({"_id": ObjectId(reminder_id)})
         if not reminder:
             raise HTTPException(status_code=404, detail="Reminder not found")
