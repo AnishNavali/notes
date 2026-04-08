@@ -160,6 +160,16 @@ async def update_settings(data: dict, current_user: CurrentUser):
     if update:
         return True
 
+@router.get("/check_invite_code")
+async def check_invite_code( request:Request,current_user: CurrentUser):
+    email = current_user.get("email", "")
+    invite_code=request.query_params["invite_code"]
+    data=db.get_one(collection="invite_codes", key={"email":email})
+    if invite_code==data["invite_code"]:
+        return True
+    else:
+        return False
+
 
 def extract_json(text: str):
     decoder = json.JSONDecoder()
