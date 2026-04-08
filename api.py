@@ -87,13 +87,13 @@ class Signup(BaseModel):
 @router.get("/check_user")
 def check_user(current_user: CurrentUser):
     email = current_user.get("email", "")  # "anish.navali@gmail.com"
-    check = db.get_one(collection="workspace", key={"user": email})
-    print(check)
-    if check:
-        data = db.get_one(collection="users", key={"email": email})
-        print(data)
-        return {"valid": True, "data": data}
-    else:
+    try:
+        check = db.get_one(collection="users", key={"email": email})["whatsapp_number"]
+        if check:
+            data = db.get_one(collection="users", key={"email": email})
+            print(data)
+            return {"valid": True, "data": data}
+    except KeyError as k:
         db.save(collection="workspace", key={"user": email}, doc={"workspace": []})
         return {"valid": False, "data": dict(current_user)}
 
