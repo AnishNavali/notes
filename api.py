@@ -81,7 +81,7 @@ def add_to_workspace(data: Component, current_user: CurrentUser):
 class Signup(BaseModel):
     country_code: str
     phone: str
-    subscription: str | None = "paid"
+    
 
 
 @router.get("/check_user")
@@ -126,6 +126,7 @@ class Msg(BaseModel):
 async def llm(msg: Msg, current_user: CurrentUser):
     email = current_user.get("email", "")
     user_data = db.query(collection="users", query={"email": email})
+    user_data=check_sub_status()
     from_number = user_data[0]["whatsapp_number"]
     print("user data", user_data)
 
@@ -142,6 +143,15 @@ async def llm(msg: Msg, current_user: CurrentUser):
     <datetime>{time}</datetime>""",
         session_id=from_number,
     )
+    tokens = response.metrics.to_dict()
+    db.inc(
+            collection="users",
+            key={"whatsapp_number": from_number},
+            doc={
+                "input_tokens": tokens["input_tokens"],
+                "output_tokens": tokens["output_tokens"],
+            },
+        )
     #   <response_structure>Return in a json structure: answer: Your answer, update: True if there is an update to the workspace else False</response_structure>
 
     # response_data=extract_json(response.content)
@@ -183,3 +193,28 @@ def extract_json(text: str):
                 pass
         i += 1
     return None
+
+def calculate_cost(tokens:dict):
+    input_cost=(3/1000000)*tokens["input_tokens"]
+    output_cost=(15/1000000)*tokens["output_tokens"]
+    total_cost=input_cost+output_cost
+    return total_cost
+
+def check_sub_status(email:str,tokens:dict):
+    user_data=db.query(collection="users", query={"email": email})
+    if user_data["subscription"]=="free":
+        return False
+    else:
+        return check_token_limit(tokens=tokens,subscription=user_data["subscription"])
+def check_token_limit(tokens:dict,subscription:str):
+    cost=calculate_cost(tokens=tokens)
+    if subscription=="basic":
+        if cost < 1: 
+            return True
+        else:
+            return False
+    elif subscription=="pro":
+        if cost < 5:
+            return True
+        else:
+            return False
