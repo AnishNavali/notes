@@ -47,7 +47,16 @@ def update_workspace(data: Component, current_user: CurrentUser):
     if update:
         return True
 
-
+@router.delete("/clear_workspace")
+def clear_workspace(current_user: CurrentUser):
+    user_id = current_user.get(
+        "email", ""
+    ) 
+    clear=db.save(collection="workspace",key={"user":user_id},doc={"workspace":[]})
+    if clear:
+        return True
+    else:
+        False
 @router.delete("/delete_component")
 def delete_component(data: Component, current_user: CurrentUser):
     user_id = current_user.get("email", "")  # "Anish"
@@ -126,7 +135,7 @@ class Msg(BaseModel):
 async def llm(msg: Msg, current_user: CurrentUser):
     email = current_user.get("email", "")
     user_data = db.query(collection="users", query={"email": email})
-    user_data=check_sub_status()
+    # user_data=check_sub_status()
     from_number = user_data[0]["whatsapp_number"]
     print("user data", user_data)
 
@@ -155,6 +164,7 @@ async def llm(msg: Msg, current_user: CurrentUser):
     #   <response_structure>Return in a json structure: answer: Your answer, update: True if there is an update to the workspace else False</response_structure>
 
     # response_data=extract_json(response.content)
+    print(response.content)
     return {"answer": response.content, "update": True}
 
 
