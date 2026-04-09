@@ -102,7 +102,15 @@ def _get_subscription(email: str) -> dict:
     user = db.get_one(collection="users", key={"email": email})
     if user and user.get("subscription"):
         return user["subscription"]
-    return "free"
+    return {
+        "plan": "free",
+        "status": "active",
+        "razorpay_subscription_id": None,
+        "razorpay_customer_id": None,
+        "current_period_end": None,
+        "cancel_at_period_end": False,
+        "grace_period_end": None,
+    }
 
 
 def _set_subscription(email: str, sub: dict):
