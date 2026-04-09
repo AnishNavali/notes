@@ -102,15 +102,16 @@ def _get_subscription(email: str) -> dict:
     user = db.get_one(collection="users", key={"email": email})
     if user and user.get("subscription"):
         return user["subscription"]
-    return {
-        "plan": "free",
-        "status": "active",
-        "razorpay_subscription_id": None,
-        "razorpay_customer_id": None,
-        "current_period_end": None,
-        "cancel_at_period_end": False,
-        "grace_period_end": None,
-    }
+    else:
+        return {
+            "plan": "free",
+            "status": "active",
+            "razorpay_subscription_id": None,
+            "razorpay_customer_id": None,
+            "current_period_end": None,
+            "cancel_at_period_end": False,
+            "grace_period_end": None,
+        }
 
 
 def _set_subscription(email: str, sub: dict):
@@ -191,9 +192,9 @@ def get_status(current_user: CurrentUser):
     """Return the authenticated user's current subscription state."""
     email = current_user.get("email", "")
     sub = _get_subscription(email)
-    if sub=="basic":
+    if sub["plan"]=="basic":
         cost="INR 99"
-    elif sub=="pro":
+    elif sub["plan"]=="pro":
         cost="INR 499"
     else:
         cost="INR 0"
