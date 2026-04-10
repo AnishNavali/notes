@@ -90,6 +90,7 @@ def add_to_workspace(data: Component, current_user: CurrentUser):
 class Signup(BaseModel):
     country_code: str
     phone: str
+    timezone:str
     
 
 
