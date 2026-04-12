@@ -7,7 +7,7 @@ import pytz
 import json
 import secrets
 import string
-
+from func import *
 from ai import agent
 
 router = APIRouter(prefix="/api")
@@ -118,9 +118,12 @@ def signup(data: Signup, current_user: CurrentUser):
     doc["whatsapp_number"] = whatsapp_number
     alphabet = string.ascii_letters + string.digits
     doc["password"] = "".join(secrets.choice(alphabet) for _ in range(8))
+    doc["input_tokens"]=0
+    doc["output_tokens"]=0
     print(doc)
     save = db.save(collection="users", key={"email": email}, doc=doc)
     print(save)
+    print(data.timezone)
     return True
 
 
@@ -135,38 +138,46 @@ class Msg(BaseModel):
 @router.post("/llm")
 async def llm(msg: Msg, current_user: CurrentUser):
     email = current_user.get("email", "")
-    user_data = db.query(collection="users", query={"email": email})
+    # user_data = db.query(collection="users", query={"email": email})
     # user_data=check_sub_status()
-    from_number = user_data[0]["whatsapp_number"]
-    print("user data", user_data)
+    allow=check_sub_status(filter={"email":email})
+    print(allow)
+    if allow[0]:
+        user_data=allow[1]
+        from_number = user_data[0]["whatsapp_number"]
+        print("user data", user_data)
 
-    text = msg.msg
+        text = msg.msg
 
-    time = datetime.now(pytz.timezone("Asia/Kolkata"))
-    response = agent.run(
-        input=f"""
-    <user_name>{user_data[0]["name"]}</user_name>
-    <user_id>{user_data[0]["email"]}</user_id>
-    <password>{user_data[0]["password"]}</password>
-    <platform>web</platform>
-    <message>{text}</message> 
-    <datetime>{time}</datetime>""",
-        session_id=from_number,
-    )
-    tokens = response.metrics.to_dict()
-    db.inc(
-            collection="users",
-            key={"whatsapp_number": from_number},
-            doc={
-                "input_tokens": tokens["input_tokens"],
-                "output_tokens": tokens["output_tokens"],
-            },
+        time = datetime.now(pytz.timezone(user_data[0]["timezone"]))
+        response = agent.run(
+            input=f"""
+        <user_name>{user_data[0]["name"]}</user_name>
+        <user_id>{user_data[0]["email"]}</user_id>
+        <password>{user_data[0]["password"]}</password>
+        <platform>web</platform>
+        <message>{text}</message> 
+        <datetime>{time}</datetime>""",
+            session_id=from_number,
         )
-    #   <response_structure>Return in a json structure: answer: Your answer, update: True if there is an update to the workspace else False</response_structure>
+        tokens = response.metrics.to_dict()
+        db.inc(
+                collection="users",
+                key={"whatsapp_number": from_number},
+                doc={
+                    "input_tokens": tokens["input_tokens"],
+                    "output_tokens": tokens["output_tokens"],
+                },
+            )
+        #   <response_structure>Return in a json structure: answer: Your answer, update: True if there is an update to the workspace else False</response_structure>
 
-    # response_data=extract_json(response.content)
-    print(response.content)
-    return {"answer": response.content, "update": True}
+        # response_data=extract_json(response.content)
+        print(response.content)
+        return {"answer": response.content, "update": True}
+    else:
+        return {"answer": "You have hit your usage limits", "update": False}
+    
+    
 
 
 @router.get("/test")
@@ -187,45 +198,8 @@ async def check_invite_code( request:Request,current_user: CurrentUser):
     invite_code=request.query_params["invite_code"]
     data=db.get_one(collection="invite_codes", key={"email":email})
     if invite_code==data["invite_code"]:
+        db.save(collection="users",key={"email":email},doc={"subscription":{"plan":"invite"}})
         return True
     else:
         return False
 
-
-def extract_json(text: str):
-    decoder = json.JSONDecoder()
-    i = 0
-    while i < len(text):
-        if text[i] in ["{", "["]:
-            try:  # decode json
-                obj, _ = decoder.raw_decode(text[i:])
-                return obj
-            except json.JSONDecodeError:
-                pass
-        i += 1
-    return None
-
-def calculate_cost(tokens:dict):
-    input_cost=(3/1000000)*tokens["input_tokens"]
-    output_cost=(15/1000000)*tokens["output_tokens"]
-    total_cost=input_cost+output_cost
-    return total_cost
-
-def check_sub_status(email:str,tokens:dict):
-    user_data=db.query(collection="users", query={"email": email})
-    if user_data["subscription"]=="free":
-        return False
-    else:
-        return check_token_limit(tokens=tokens,subscription=user_data["subscription"])
-def check_token_limit(tokens:dict,subscription:str):
-    cost=calculate_cost(tokens=tokens)
-    if subscription=="basic":
-        if cost < 1: 
-            return True
-        else:
-            return False
-    elif subscription=="pro":
-        if cost < 5:
-            return True
-        else:
-            return False

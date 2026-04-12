@@ -6,6 +6,7 @@ from datetime import datetime
 import db as database
 import httpx
 import pytz
+from func import *
 
 # import db
 from agno.media import Audio, Image
@@ -23,10 +24,14 @@ WHATSAPP_API_URL = f"https://graph.facebook.com/v22.0/{PHONE_NUMBER_ID}/messages
 
 celery = Celery(
     "reminder_app",
-    broker="redis://localhost:6379/0",
-    backend="redis://localhost:6379/0",
+    broker=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
+    backend=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
     include=["tasks"],
 )
+
+# All tasks without an explicit queue= go to "default"
+# This ensures beat tasks land on "default" not Celery's built-in "celery" queue
+celery.conf.task_default_queue = "default"
 
 # MongoDB
 mongo_client = MongoClient("mongodb://localhost:27017")
@@ -138,7 +143,7 @@ celery.conf.beat_schedule = {
 }
 
 
-@celery.task(bind=True)
+@celery.task(bind=True, queue="messages")
 def handle_text(self, text: str, from_number: str) -> str:
     if "annie are you ok" in text.lower():
         return """I have been hit by ... I have been struck by
@@ -147,61 +152,77 @@ def handle_text(self, text: str, from_number: str) -> str:
         .
         A smooth criminal 🕴"""
     else:
-        user_data = database.query(
-            collection="users", query={"whatsapp_number": from_number}
-        )
-        print("user data", user_data)
-        print("from", from_number)
-        time = datetime.now(pytz.timezone("Asia/Kolkata"))
-        response = agent.run(
-            input=f"""<user_name>{user_data[0]["name"]}</user_name>
-                        <user_id>{user_data[0]["email"]}</user_id>
-                        <password>{user_data[0]["password"]}</password>
-                        <plaform>whatsapp</platform>
-                        <message>{text}</message> 
-                        <datetime>{time}</datetime>""",
-            session_id=from_number,
-        )
-        tokens = response.metrics.to_dict()
-        database.inc(
-            collection="users",
-            key={"whatsapp_number": from_number},
-            doc={
-                "input_tokens": tokens["input_tokens"],
-                "output_tokens": tokens["output_tokens"],
-            },
-        )
-        send_message(to=from_number, body=response.content)
+        allow = check_sub_status(filter={"whatsapp_number": from_number})
+        if allow[0]:
+            user_data = allow[1]
+            # user_data = database.query(
+            #     collection="users", query={"whatsapp_number": from_number}
+            # )
+            print("user data", user_data)
+            print("from", from_number)
+            time = datetime.now(pytz.timezone(user_data[0]["timezone"]))
+            response = agent.run(
+                input=f"""<user_name>{user_data[0]["name"]}</user_name>
+                            <user_id>{user_data[0]["email"]}</user_id>
+                            <password>{user_data[0]["password"]}</password>
+                            <plaform>whatsapp</platform>
+                            <message>{text}</message> 
+                            <datetime>{time}</datetime>""",
+                session_id=from_number,
+            )
+            tokens = response.metrics.to_dict()
+            database.inc(
+                collection="users",
+                key={"whatsapp_number": from_number},
+                doc={
+                    "input_tokens": tokens["input_tokens"],
+                    "output_tokens": tokens["output_tokens"],
+                },
+            )
+            send_message(to=from_number, body=response.content)
+
+        else:
+            body = "You have reached your chat limit for the current billing cycle."
+            send_message(to=from_number, body=body)
         # return response.content
 
 
-@celery.task(bind=True)
+@celery.task(bind=True, queue="messages")
 def handle_image(self, image_id: str, caption: str, from_number: str) -> str:
     # Step 1: Get the image download URL from Meta
     media_url = get_media_url(image_id)
 
     # Step 2: Download the image bytes
     image_bytes = download_media(media_url)
-    user_data = database.query(
-        collection="users", query={"whatsapp_number": from_number}
-    )
-    print("user data", user_data)
-    print("from", from_number)
-    time = datetime.now(pytz.timezone("Asia/Kolkata"))
-    response = agent.run(
-        input=f"""<user_name>{user_data[0]["name"]}</user_name>
-                       <user_id>{user_data[0]["email"]}</user_id>
-                       <password>{user_data[0]["password"]}</password>
-                       <plaform>whatsapp</platform>
-                      <message>{caption}</message> 
-                     <datetime>{time}</datetime>""",
-        session_id=from_number,
-        images=[Image(content=image_bytes)],
-    )
-    send_message(to=from_number, body=response.content)
+    allow = check_sub_status(filter={"whatsapp_number": from_number})
+
+    if allow[0]:
+        user_data = allow[1]
+        # user_data = database.query(
+        #     collection="users", query={"whatsapp_number": from_number}
+        # )
+        print("user data", user_data)
+        print("from", from_number)
+        time = datetime.now(pytz.timezone(user_data[0]["timezone"]))
+        response = agent.run(
+            input=f"""<user_name>{user_data[0]["name"]}</user_name>
+                        <user_id>{user_data[0]["email"]}</user_id>
+                        <password>{user_data[0]["password"]}</password>
+                        <plaform>whatsapp</platform>
+                        <message>{caption}</message> 
+                        <datetime>{time}</datetime>""",
+            session_id=from_number,
+            images=[Image(content=image_bytes)],
+        )
+        send_message(to=from_number, body=response.content)
+    else:
+        send_message(
+            to=from_number,
+            body="You have reached your chat limit for the current billing cycle.",
+        )
 
 
-@celery.task(bind=True)
+@celery.task(bind=True, queue="messages")
 def handle_audio(self, audio_id: str, from_number: str) -> str:
     # Step 1: Get the audio download URL from Meta
     media_url = get_media_url(audio_id)
@@ -210,26 +231,35 @@ def handle_audio(self, audio_id: str, from_number: str) -> str:
 
     # Step 2: Download the audio bytes
     audio_bytes = download_media(media_url)
-    user_data = database.query(
-        collection="users", query={"whatsapp_number": from_number}
-    )
-    print("user data", user_data)
-    print("from", from_number)
-    text = voice_agent.run(
-        input="transcribe the audio",
-        audio=[Audio(content=audio_bytes, mime_type="audio/ogg")],
-    )
-    print(text.content)
-    time = datetime.now(pytz.timezone("Asia/Kolkata"))
-    response = agent.run(
-        input=f"""<user_name>{user_data[0]["name"]}</user_name>
-                       <user_id>{user_data[0]["email"]}</user_id>
-                       <password>{user_data[0]["password"]}</password>
-                       <plaform>whatsapp voice note</platform>
-                      <message>{text.content}</message> 
-                     <datetime>{time}</datetime>""",
-        session_id=from_number,
-    )
+    # user_data = database.query(
+    #     collection="users", query={"whatsapp_number": from_number}
+    # )
+    allow = check_sub_status(filter={"whatsapp_number": from_number})
+    if allow[0]:
+        user_data = allow[1]
+        print("user data", user_data)
+        print("from", from_number)
+        text = voice_agent.run(
+            input="transcribe the audio",
+            audio=[Audio(content=audio_bytes, mime_type="audio/ogg")],
+        )
+        print(text.content)
+        time = datetime.now(pytz.timezone(user_data[0]["timezone"]))
+        response = agent.run(
+            input=f"""<user_name>{user_data[0]["name"]}</user_name>
+                        <user_id>{user_data[0]["email"]}</user_id>
+                        <password>{user_data[0]["password"]}</password>
+                        <plaform>whatsapp voice note</platform>
+                        <message>{text.content}</message> 
+                        <datetime>{time}</datetime>""",
+            session_id=from_number,
+        )
+        send_message(to=from_number, body=response.content)
+    else:
+        send_message(
+            to=from_number,
+            body="You have reached your chat limit for the current billing cycle.",
+        )
 
 
 def send_message(to: str, body: str):

@@ -477,6 +477,9 @@ async def razorpay_webhook(request: Request):
             status="captured",
             plan=sub.get("plan"),
         )
+        user_data=db.get_one(collection="users",key={"email":email})
+        total_tokens=user_data["input_tokens"]+user_data["output_tokens"]
+        db.save(collection="users",key={"email":email},doc={"input_tokens":0,"output_tokens":0})
 
     # ---- subscription.cancelled ----------------------------------------
     # Razorpay fires this when cancel_at_cycle_end triggers at period end.
