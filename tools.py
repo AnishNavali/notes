@@ -2,7 +2,10 @@ from datetime import datetime
 import pytz
 from pymongo import MongoClient
 import db as database
-mongo_client = MongoClient("mongodb://localhost:27017")
+import os
+from dotenv import load_dotenv
+load_dotenv()
+mongo_client = MongoClient(os.getenv("MONGO_URI"))
 db = mongo_client["reminders_db"]
 reminders_coll = db["reminders"]
 
@@ -78,7 +81,10 @@ def get_workspace(user_id:str,password:str):
     if password!=user_password:
         return "invalid password"
     workspace=db["workspace"]
-    return workspace.find_one({"user":user_id})["workspace"]
+    if workspace.find_one({"user":user_id})["workspace"]==[]:
+        return "Workspace is empty"
+    else:
+      return workspace.find_one({"user":user_id})["workspace"]
 def update_component(user_id:str , password:str, component_title:str, updated_component:dict):
     """Use this tool to update an existing notes component.
     Args:

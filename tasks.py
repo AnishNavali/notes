@@ -34,7 +34,7 @@ celery = Celery(
 celery.conf.task_default_queue = "default"
 
 # MongoDB
-mongo_client = MongoClient("mongodb://localhost:27017")
+mongo_client = MongoClient(os.getenv("MONGO_URI"))
 db = mongo_client["reminders_db"]
 reminders_coll = db["reminders"]
 

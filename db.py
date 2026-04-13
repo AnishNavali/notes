@@ -3,14 +3,16 @@ import hashlib
 import urllib
 import hmac
 import certifi
-
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 def connect_db():
     # with open('config.toml','r') as f:
     #     secrets=toml.load(f)
     # mongo_username = secrets['mongo']['username']
     # mongo_password = secrets['mongo']['password']
-    connection = "mongodb://127.0.0.1:27017"
+    connection = os.getenv("MONGO_URI")#"mongodb://127.0.0.1:27017"
     # connection = "mongodb+srv://Anish:Fjk22%26%2331@chatbotjs-mongo.mongocluster.cosmos.azure.com/?tls=true&authMechanism=SCRAM-SHA-256&retrywrites=false&maxIdleTimeMS=120000"
     client = MongoClient(
         connection
