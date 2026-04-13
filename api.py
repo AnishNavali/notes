@@ -182,7 +182,12 @@ async def llm(msg: Msg, current_user: CurrentUser):
 
 @router.get("/test")
 def test():
-    return "True"
+    try:
+        ans=db.query(collection="users")
+        return ans
+    except Exception as e:
+
+        return str(e)
 
 
 @router.post("/update_settings")
