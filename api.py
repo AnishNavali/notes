@@ -202,4 +202,16 @@ async def check_invite_code( request:Request,current_user: CurrentUser):
         return True
     else:
         return False
-
+    
+class Invite(BaseModel):
+    user:str
+    password:str
+    email:str
+@router.post("/create_invite")
+async def create_invite(data:Invite):
+    if data.user=="anish" and data.password=="Point2212@!@#":
+        invite_code=data.email[:4].upper()+"AI_APP"
+        db.save(collection="invite_codes",key={"email":data.email},doc={"inivte_code":invite_code})
+        return True
+    else:
+        return False

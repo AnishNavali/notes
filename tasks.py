@@ -146,11 +146,12 @@ celery.conf.beat_schedule = {
 @celery.task(bind=True, queue="messages")
 def handle_text(self, text: str, from_number: str) -> str:
     if "annie are you ok" in text.lower():
-        return """I have been hit by ... I have been struck by
+        body= """I have been hit by ... I have been struck by
         .
         .
         .
         A smooth criminal 🕴"""
+        send_message(to=from_number, body=body)
     else:
         allow = check_sub_status(filter={"whatsapp_number": from_number})
         if allow[0]:

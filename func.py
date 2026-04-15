@@ -8,8 +8,8 @@ def calculate_cost(tokens:tuple):
 
 def check_sub_status(filter: dict):
     user_data=db.query(collection="users", query=filter)
-    if user_data[0].get("subscription")==None:
-        return False
+    if user_data==[] or user_data[0].get("subscription")==None:
+        return False,None
         
     else:
         return check_token_limit(tokens=(user_data[0]["input_tokens"],user_data[0]["output_tokens"]),subscription=user_data[0]["subscription"]["plan"]),user_data
