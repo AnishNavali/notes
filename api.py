@@ -198,7 +198,7 @@ async def check_invite_code( request:Request,current_user: CurrentUser):
     email = current_user.get("email", "")
     invite_code=request.query_params["invite_code"]
     data=db.get_one(collection="invite_codes", key={"email":email})
-    if invite_code==data["invite_code"]:
+    if invite_code==data["inivte_code"]:
         db.save(collection="users",key={"email":email},doc={"subscription":{"plan":"invite"}})
         return True
     else:
