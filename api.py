@@ -103,7 +103,7 @@ def check_user(current_user: CurrentUser):
             data = db.get_one(collection="users", key={"email": email})
             print(data)
             return {"valid": True, "data": data}
-    except KeyError as k:
+    except Exception:
         db.save(collection="workspace", key={"user": email}, doc={"workspace": []})
         return {"valid": False, "data": dict(current_user)}
 
