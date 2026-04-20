@@ -25,6 +25,7 @@ from pydantic import BaseModel
 
 import db
 from dependencies import CurrentUser
+from invoices import generate_and_send_invoice
 
 router = APIRouter(prefix="/api/subscriptions", tags=["subscriptions"])
 
@@ -158,6 +159,7 @@ def _record_payment(
     status: str = "captured",
     failure_reason: str | None = None,
     plan: str | None = None,
+    invoice_number: str | None = None,
 ):
     """Insert a payment record into the payments collection."""
     doc = {
@@ -171,6 +173,7 @@ def _record_payment(
         "status": status,
         "failure_reason": failure_reason,
         "plan": plan,
+        "invoice_number": invoice_number,
         "created_at": datetime.now(timezone.utc),
     }
     db.insert(collection="payments", doc=doc)
@@ -192,13 +195,13 @@ def get_status(current_user: CurrentUser):
     """Return the authenticated user's current subscription state."""
     email = current_user.get("email", "")
     sub = _get_subscription(email)
-    if sub["plan"]=="basic":
-        cost="INR 99"
-    elif sub["plan"]=="pro":
-        cost="INR 499"
+    if sub["plan"] == "basic":
+        cost = "INR 99"
+    elif sub["plan"] == "pro":
+        cost = "INR 499"
     else:
-        cost="INR 0"
-    return {"type":sub,"cost":cost}
+        cost = "INR 0"
+    return {"type": sub, "cost": cost}
 
 
 @router.get("/payments")
@@ -450,6 +453,8 @@ async def razorpay_webhook(request: Request):
         sub["cancel_at_period_end"] = False
         sub["grace_period_end"] = None
         sub["razorpay_customer_id"] = sub_entity.get("customer_id")
+        # No invoice here — subscription.charged fires for the same first payment
+        # and handles invoice generation for all payments (first + recurring)
         _record_payment(
             email=email,
             event=event,
@@ -459,6 +464,7 @@ async def razorpay_webhook(request: Request):
             currency=payment_entity.get("currency", "INR"),
             status="captured",
             plan=sub["plan"],
+            invoice_number=None,
         )
 
     # ---- subscription.charged (successful recurring payment) -----------
@@ -467,19 +473,36 @@ async def razorpay_webhook(request: Request):
         sub["current_period_end"] = _unix_to_dt(sub_entity.get("current_end"))
         sub["cancel_at_period_end"] = sub_entity.get("cancel_at_cycle_end", False)
         sub["grace_period_end"] = None  # clear any previous grace period
+        amount = payment_entity.get("amount")
+        invoice_number = (
+            generate_and_send_invoice(
+                email=email,
+                payment_id=payment_entity.get("id"),
+                amount_paise=amount or 0,
+                plan=sub.get("plan", ""),
+                currency=payment_entity.get("currency", "INR"),
+            )
+            if amount
+            else None
+        )
         _record_payment(
             email=email,
             event=event,
             razorpay_subscription_id=razorpay_subscription_id,
             razorpay_payment_id=payment_entity.get("id"),
-            amount=payment_entity.get("amount"),
+            amount=amount,
             currency=payment_entity.get("currency", "INR"),
             status="captured",
             plan=sub.get("plan"),
+            invoice_number=invoice_number,
         )
-        user_data=db.get_one(collection="users",key={"email":email})
-        total_tokens=user_data["input_tokens"]+user_data["output_tokens"]
-        db.save(collection="users",key={"email":email},doc={"input_tokens":0,"output_tokens":0})
+        user_data = db.get_one(collection="users", key={"email": email})
+        # total_tokens = user_data["input_tokens"] + user_data["output_tokens"]
+        db.save(
+            collection="users",
+            key={"email": email},
+            doc={"input_tokens": 0, "output_tokens": 0},
+        )
 
     # ---- subscription.cancelled ----------------------------------------
     # Razorpay fires this when cancel_at_cycle_end triggers at period end.
@@ -528,10 +551,18 @@ async def razorpay_webhook(request: Request):
         )
 
     # ---- payment.failed ------------------------------------------------
-    # A single payment attempt failed — start grace period.
     elif event == "payment.failed":
-        # Only apply grace period if the failure is for an active subscription
-        if sub.get("status") in ("active", "grace_period"):
+        if sub.get("status") == "created":
+            # First payment never succeeded — wipe subscription back to free/empty
+            sub["status"] = "free"
+            sub["plan"] = "free"
+            sub["razorpay_subscription_id"] = None
+            sub["razorpay_customer_id"] = None
+            sub["current_period_end"] = None
+            sub["cancel_at_period_end"] = False
+            sub["grace_period_end"] = None
+        elif sub.get("status") in ("active", "grace_period"):
+            # Recurring payment failed — start grace period
             sub["status"] = "grace_period"
             sub["grace_period_end"] = now + timedelta(days=GRACE_DAYS)
         _record_payment(
