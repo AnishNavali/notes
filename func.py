@@ -12,22 +12,22 @@ def check_sub_status(filter: dict):
         return False,None
         
     else:
-        return check_token_limit(tokens=(user_data[0]["input_tokens"],user_data[0]["output_tokens"]),subscription=user_data[0]["subscription"]["plan"]),user_data
+        return check_token_limit(tokens=(user_data[0]["input_tokens"],user_data[0]["output_tokens"]),subscription=user_data[0]["subscription"]),user_data
 
 def check_token_limit(tokens:tuple,subscription:str):
     cost=calculate_cost(tokens=tokens)
     print(cost)
-    if subscription=="basic" or subscription=="invite":
+    if (subscription["plan"]=="basic" and subscription["status"]=="active")or subscription["plan"]=="invite":
         if cost < 3: 
             return True
         else:
             return False
-    elif subscription=="pro":
+    elif subscription["plan"]=="pro" and subscription["status"]=="active":
         if cost < 6:
             return True
         else:
             return False
-    elif subscription=="free":
+    elif subscription["plan"]=="free":
         if cost < 1:
             return True
         else:
