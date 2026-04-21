@@ -294,7 +294,7 @@ def _generate_pdf(
     pdf.ln()
 
     pdf.set_font("Helvetica", "", 9)
-    desc = f"{plan.title()} Plan (Monthly Subscription)"
+    desc = f"Another-AI App - {plan.title()} Plan (Monthly Subscription)"
     row = ["1", desc, BUSINESS_SAC, gst["taxable_display"]]
     for i, (val, w) in enumerate(zip(row, col_w)):
         align = "R" if i == 3 else "L"
