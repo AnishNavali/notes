@@ -91,6 +91,7 @@ class Signup(BaseModel):
     country_code: str
     phone: str
     timezone:str
+    state:str
     
 
 
@@ -121,6 +122,7 @@ def signup(data: Signup, current_user: CurrentUser):
     doc["password"] = "".join(secrets.choice(alphabet) for _ in range(8))
     doc["input_tokens"]=0
     doc["output_tokens"]=0
+    doc["subscription"]={"plan":"free"}
     print(doc)
     save = db.save(collection="users", key={"email": email}, doc=doc)
     print(save)

@@ -27,6 +27,11 @@ def check_token_limit(tokens:tuple,subscription:str):
             return True
         else:
             return False
+    elif subscription=="free":
+        if cost < 1:
+            return True
+        else:
+            return False
         
 def extract_json(text: str):
     decoder = json.JSONDecoder()
