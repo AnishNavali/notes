@@ -116,18 +116,22 @@ def signup(data: Signup, current_user: CurrentUser):
     email = current_user.get("email", "")  # "anish.navali@gmail.com"
     whatsapp_number = data.country_code.split("+")[1] + data.phone
     print(whatsapp_number)
-    doc = dict(data)
-    doc["whatsapp_number"] = whatsapp_number
-    alphabet = string.ascii_letters + string.digits
-    doc["password"] = "".join(secrets.choice(alphabet) for _ in range(8))
-    doc["input_tokens"]=0
-    doc["output_tokens"]=0
-    doc["subscription"]={"plan":"free"}
-    print(doc)
-    save = db.save(collection="users", key={"email": email}, doc=doc)
-    print(save)
-    print(data.timezone)
-    return True
+    phone_check=db.get_one(collection="users",key={"whatsapp_number":whatsapp_number})
+    if phone_check:
+        return False
+    else:
+        doc = dict(data)
+        doc["whatsapp_number"] = whatsapp_number
+        alphabet = string.ascii_letters + string.digits
+        doc["password"] = "".join(secrets.choice(alphabet) for _ in range(8))
+        doc["input_tokens"]=0
+        doc["output_tokens"]=0
+        doc["subscription"]={"plan":"free"}
+        print(doc)
+        save = db.save(collection="users", key={"email": email}, doc=doc)
+        print(save)
+        print(data.timezone)
+        return True
 
 
 # signup(data=Signup(country_code="+91",phone="9606024155"))
