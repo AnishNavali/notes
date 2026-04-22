@@ -8,7 +8,7 @@ def calculate_cost(tokens:tuple):
 
 def check_sub_status(filter: dict):
     user_data=db.query(collection="users", query=filter)
-    if user_data==[] or user_data[0].get("subscription")==None:
+    if user_data==[]:
         print("failed to fetch user")
         return False,None
         
