@@ -9,6 +9,7 @@ def calculate_cost(tokens:tuple):
 def check_sub_status(filter: dict):
     user_data=db.query(collection="users", query=filter)
     if user_data==[] or user_data[0].get("subscription")==None:
+        print("failed to fetch user")
         return False,None
         
     else:
@@ -21,6 +22,7 @@ def check_token_limit(tokens:tuple,subscription:str):
         if cost < 3: 
             return True
         else:
+            print("failed in basic check")
             return False
     elif subscription["plan"]=="pro" and subscription["status"]=="active":
         if cost < 6:
