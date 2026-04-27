@@ -184,8 +184,10 @@ def handle_text(self, text: str, from_number: str) -> str:
 
         else:
             if not allow[1]:
-                body="""Hey there! Welcome to Another AI App. Seems like you have not signed up with us.
-                You can signup at https://another-ai.app and then come back to start your conversation with Annie."""
+                body="""Hey there! 
+Welcome to Another AI App. 
+Seems like you have not signed up with us.
+You can signup at https://another-ai.app and then come back to start your conversation with Annie."""
             else:
                 body = "You have reached your chat limit for the current billing cycle."
             send_message(to=from_number, body=body)
