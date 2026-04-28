@@ -95,9 +95,14 @@ def update_component(user_id:str , password:str, component_title:str, updated_co
     user_password=database.get_one(collection="users",key={"email":user_id},projection={"password":1})["password"]
     if password!=user_password:
         return "invalid password"
-    workspace=db["workspace"]
-    workspace.update_one({"user":user_id,"workspace.title":component_title},{"$set":{"workspace.$":updated_component}})
-    return f"{component_title} updated successfully"
+    components=["table","task-list","todo","journal","goal","event","commitment","project","reminder","chart"]
+    if updated_component.get("type") and updated_component.get("type") in components:
+        
+      workspace=db["workspace"]
+      workspace.update_one({"user":user_id,"workspace.title":component_title},{"$set":{"workspace.$":updated_component}})
+      return f"{component_title} updated successfully"
+    else:
+        return f"Invalid component type. Type should be one of {components}"
 
 def get_component_format(component_type:str):
     """Use this tool to get the format of the component to be added to the workspace.
