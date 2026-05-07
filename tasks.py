@@ -155,32 +155,38 @@ def handle_text(self, text: str, from_number: str) -> str:
     else:
         allow = check_sub_status(filter={"whatsapp_number": from_number})
         if allow[0]:
-            user_data = allow[1]
-            # user_data = database.query(
-            #     collection="users", query={"whatsapp_number": from_number}
-            # )
-            print("user data", user_data)
-            print("from", from_number)
-            time = datetime.now(pytz.timezone(user_data[0]["timezone"]))
-            response = agent.run(
-                input=f"""<user_name>{user_data[0]["name"]}</user_name>
-                            <user_id>{user_data[0]["email"]}</user_id>
-                            <password>{user_data[0]["password"]}</password>
-                            <plaform>whatsapp</platform>
-                            <message>{text}</message> 
-                            <datetime>{time}</datetime>""",
-                session_id=from_number,
-            )
-            tokens = response.metrics.to_dict()
-            database.inc(
-                collection="users",
-                key={"whatsapp_number": from_number},
-                doc={
-                    "input_tokens": tokens["input_tokens"],
-                    "output_tokens": tokens["output_tokens"],
-                },
-            )
-            send_message(to=from_number, body=response.content)
+            try:
+                user_data = allow[1]
+                # user_data = database.query(
+                #     collection="users", query={"whatsapp_number": from_number}
+                # )
+                print("user data", user_data)
+                print("from", from_number)
+                time = datetime.now(pytz.timezone(user_data[0]["timezone"]))
+                response = agent.run(
+                    input=f"""<user_name>{user_data[0]["name"]}</user_name>
+                                <user_id>{user_data[0]["email"]}</user_id>
+                                <password>{user_data[0]["password"]}</password>
+                                <plaform>whatsapp</platform>
+                                <message>{text}</message> 
+                                <datetime>{time}</datetime>""",
+                    session_id=from_number,
+                )
+                tokens = response.metrics.to_dict()
+                database.inc(
+                    collection="users",
+                    key={"whatsapp_number": from_number},
+                    doc={
+                        "input_tokens": tokens["input_tokens"],
+                        "output_tokens": tokens["output_tokens"],
+                    },
+                )
+                send_message(to=from_number, body=response.content)
+            except Exception as e:
+                print(str(e))
+                body="I am currently unable to help you out, try again in some time."
+                send_message(to=from_number, body=body)
+            
 
         else:
             if not allow[1]:
