@@ -104,6 +104,13 @@ def save(collection=None, key=None, doc=None):
     db = client[collection]
     result = db.update_one(key, {"$set": doc}, upsert=True)
     return result
+
+def replace_doc(collection=None, key=None, doc=None):
+    """Replace entire document (use when changing field types)."""
+    client = connect_db()
+    db = client[collection]
+    result = db.replace_one(key, doc, upsert=True)
+    return result
 def push(collection=None, key=None, doc=None):
     client = connect_db()
     db = client[collection]
@@ -113,6 +120,12 @@ def inc(collection=None, key=None, doc=None):
     client = connect_db()
     db = client[collection]
     result = db.update_one(key, {"$inc": doc}, upsert=True)
+    return result
+
+def unset(collection=None, key=None, doc=None):
+    client = connect_db()
+    db = client[collection]
+    result = db.update_one(key, {"$unset": doc}, upsert=True)
     return result
 
 def insert(collection=None, doc=None):

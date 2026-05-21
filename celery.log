@@ -1,0 +1,40 @@
+/home/fedora/.local/lib/python3.13/site-packages/pydantic/_internal/_fields.py:132: UserWarning: Field "model_id" in EvalRunRecord has conflict with protected namespace "model_".
+
+You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ()`.
+  warnings.warn(
+/home/fedora/.local/lib/python3.13/site-packages/pydantic/_internal/_fields.py:132: UserWarning: Field "model_provider" in EvalRunRecord has conflict with protected namespace "model_".
+
+You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ()`.
+  warnings.warn(
+/home/fedora/.local/lib/python3.13/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (1.26.20) or chardet (7.0.1)/charset_normalizer (3.3.2) doesn't match a supported version!
+  warnings.warn(
+ 
+ -------------- celery@fedora v5.6.3 (recovery)
+--- ***** ----- 
+-- ******* ---- Linux-6.17.10-100.fc41.x86_64-x86_64-with-glibc2.40 2026-04-14 17:30:02
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         reminder_app:0x7f5c0c177770
+- ** ---------- .> transport:   redis://localhost:6379/0
+- ** ---------- .> results:     redis://localhost:6379/0
+- *** --- * --- .> concurrency: 16 (prefork)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> default          exchange=default(direct) key=default
+                
+
+[tasks]
+  . tasks.check_grace_periods
+  . tasks.handle_audio
+  . tasks.handle_image
+  . tasks.handle_text
+  . tasks.heartbeat_check_reminders
+  . tasks.trigger_reminder
+
+[2026-04-14 17:30:06,910: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-04-14 17:30:06,913: INFO/MainProcess] mingle: searching for neighbors
+[2026-04-14 17:30:07,921: INFO/MainProcess] mingle: all alone
+[2026-04-14 17:30:07,932: INFO/MainProcess] celery@fedora ready.
+
+worker: Warm shutdown (MainProcess)

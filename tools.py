@@ -55,49 +55,144 @@ def set_reminder(message: str,
         print("invalid datetime format")
         raise e
     
-def add_to_workspace(user_id: str, password:str , component: dict):
+def add_to_workspace(user_id: str, password:str , component: dict, page:str="Main"):
     """Use this tool to add a note component to the workspace.
     Args:
         user_id(str): the user name of the user.
         password(str): the user's password.
         component(dict): the component dict to be added to the workspace.
+        page(str): the page name in the workspace where component will be added.
     Returns: str
 
     """
     user_password=database.get_one(collection="users",key={"email":user_id},projection={"password":1})["password"]
     if password!=user_password:
         return "invalid password"
+    
     workspace=db["workspace"]
-    workspace.update_one({"user":user_id},{"$push":{"workspace":component}})
+    user_doc = workspace.find_one({"user": user_id})
+    if not user_doc:
+        return "User workspace not found"
+    
+    # Check if page exists in workspace - do NOT create new pages
+    workspace_data = user_doc.get("workspace", {})
+    if page not in workspace_data:
+        return f"Page '{page}' does not exist. Ask user to create the page first."
+    
+    workspace.update_one({"user":user_id},{"$push":{f"workspace.{page}": component}})
     print(component)
-    return "Added component successfully to the workspace"
+    return f"Added component successfully to page '{page}'"
 
-def get_workspace(user_id:str,password:str):
+def get_workspace(user_id:str,password:str, page:str="Main"):
     """Use this tool to get the entire workspace of the user.
     Args: user_id(str): the user name of the user.
           password(str): the user's password.
+          page(str): the page name in the workspace to get components from.
     Returns dict"""
     user_password=database.get_one(collection="users",key={"email":user_id},projection={"password":1})["password"]
     if password!=user_password:
         return "invalid password"
     workspace=db["workspace"]
-    if workspace.find_one({"user":user_id})["workspace"]==[]:
-        return "Workspace is empty"
-    else:
-      return workspace.find_one({"user":user_id})["workspace"]
-def update_component(user_id:str , password:str, component_title:str, updated_component:dict):
+    user_doc = workspace.find_one({"user":user_id})
+    if not user_doc:
+        return []
+    page_data = user_doc.get("workspace", {}).get(page, [])
+    if page_data == [] or page_data is None:
+        return []
+    return page_data
+def update_component(user_id:str , password:str, component_title:str, updated_component:dict, page:str="Main"):
     """Use this tool to update an existing notes component.
     Args:
     user_id(str): the user name of the user.
     password(str): the user's password.
     component_title(str) : the name of the component that you want to update.
-    updated_component(str): the new updated component that is going to overwrite on the existing one."""
+    updated_component(dict): the new updated component that is going to overwrite on the existing one.
+    page(str): the page name in the workspace where the component is located."""
+    user_password=database.get_one(collection="users",key={"email":user_id},projection={"password":1})["password"]
+    if password!=user_password:
+        return "invalid password"
+    
+    workspace=db["workspace"]
+    user_doc = workspace.find_one({"user": user_id})
+    if not user_doc:
+        return "User workspace not found"
+    
+    # Check if page exists in workspace
+    workspace_data = user_doc.get("workspace", {})
+    if page not in workspace_data:
+        return f"Page '{page}' not found"
+    
+    # Find component index by title in that page
+    page_components = workspace_data.get(page, [])
+    component_index = None
+    for i, comp in enumerate(page_components):
+        if comp.get("title") == component_title:
+            component_index = i
+            break
+    
+    if component_index is None:
+        return f"Component '{component_title}' not found on page '{page}'"
+    
+    # Update using direct index path
+    workspace.update_one(
+        {"user": user_id},
+        {"$set": {f"workspace.{page}.{component_index}": updated_component}}
+    )
+    return f"{component_title} updated successfully in page '{page}'"
+
+def get_page_names(user_id: str, password: str):
+    """Use this tool to get all page names in the user's workspace.
+    Args:
+        user_id(str): the user name of the user.
+        password(str): the user's password.
+    Returns: list of page names"""
     user_password=database.get_one(collection="users",key={"email":user_id},projection={"password":1})["password"]
     if password!=user_password:
         return "invalid password"
     workspace=db["workspace"]
-    workspace.update_one({"user":user_id,"workspace.title":component_title},{"$set":{"workspace.$":updated_component}})
-    return f"{component_title} updated successfully"
+    user_doc = workspace.find_one({"user":user_id})
+    if not user_doc:
+        return ["Main"]
+    workspace_data = user_doc.get("workspace", {})
+    if not workspace_data:
+        return ["Main"]
+    page_names = list(workspace_data.keys())
+    if not page_names:
+        return ["Main"]
+    return page_names
+
+def create_page(user_id: str, password: str, page_name: str):
+    """Use this tool to create a new page in the workspace.
+    Args:
+        user_id(str): the user name of the user.
+        password(str): the user's password.
+        page_name(str): the name of the new page to create.
+    Returns: str"""
+    user_password=database.get_one(collection="users",key={"email":user_id},projection={"password":1})["password"]
+    if password!=user_password:
+        return "invalid password"
+    workspace=db["workspace"]
+    user_doc = workspace.find_one({"user":user_id})
+    if user_doc and user_doc.get("workspace", {}).get(page_name):
+        return f"Page '{page_name}' already exists"
+    workspace.update_one({"user":user_id},{"$set":{f"workspace.{page_name}": []}})
+    return f"Page '{page_name}' created successfully"
+
+def delete_page(user_id: str, password: str, page_name: str):
+    """Use this tool to delete a page from the workspace.
+    Args:
+        user_id(str): the user name of the user.
+        password(str): the user's password.
+        page_name(str): the name of the page to delete.
+    Returns: str"""
+    user_password=database.get_one(collection="users",key={"email":user_id},projection={"password":1})["password"]
+    if password!=user_password:
+        return "invalid password"
+    if page_name == "Main":
+        return "Cannot delete the Main page"
+    workspace=db["workspace"]
+    workspace.update_one({"user":user_id},{"$unset":{f"workspace.{page_name}": ""}})
+    return f"Page '{page_name}' deleted successfully"
 
 def get_component_format(component_type:str):
     """Use this tool to get the format of the component to be added to the workspace.

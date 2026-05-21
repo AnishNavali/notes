@@ -20,7 +20,7 @@ import os
 from datetime import datetime, timedelta, timezone
 
 import razorpay
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, Request, status, Query
 from pydantic import BaseModel
 
 import db
@@ -395,6 +395,56 @@ def cancel_subscription(current_user: CurrentUser):
         "message": "Subscription will be cancelled at the end of the current billing period.",
         "current_period_end": sub.get("current_period_end"),
     }
+
+
+@router.post("/cancel_by_id")
+def cancel_subscription_by_id(
+    subscription_id: str = Query(..., description="Razorpay subscription ID to cancel")
+):
+    """
+    Cancel a subscription by its ID. Used when user closes payment modal without paying.
+    """
+    # Find the user by subscription ID
+    email = None
+    sub = None
+    
+    # Search through users to find the subscription
+    users = db.query(collection="users", query={})
+    for user in users:
+        sub_data = user.get("subscription", {})
+        if sub_data.get("razorpay_subscription_id") == subscription_id:
+            email = user.get("email")
+            sub = sub_data
+            break
+    
+    if not email or not sub:
+        return {"message": "Subscription not found"}
+    
+    if sub.get("status") == "free" or not sub.get("razorpay_subscription_id"):
+        return {"message": "No active subscription to cancel"}
+    
+    # Cancel in Razorpay
+    client = _razorpay_client()
+    try:
+        client.subscription.cancel(subscription_id)
+    except Exception as e:
+        # Subscription might already be cancelled or doesn't exist
+        pass
+    
+    # Update local record
+    db.save(
+        collection="users",
+        key={"email": email},
+        doc={
+            "subscription": {
+                "plan": "free",
+                "status": "cancelled",
+                "razorpay_subscription_id": None,
+            }
+        },
+    )
+    
+    return {"message": "Subscription cancelled"}
 
 
 # ---------------------------------------------------------------------------
