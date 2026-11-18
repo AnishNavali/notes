@@ -13,7 +13,7 @@ load_dotenv()
 
 app = APIRouter(prefix="/whatsapp")
 
-VERIFY_TOKEN = "pass@123!@#" #os.getenv("VERIFY_TOKEN")
+VERIFY_TOKEN = "" #os.getenv("VERIFY_TOKEN")
 WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
 PHONE_NUMBER_ID = os.getenv("PHONE_NUMBER_ID")
 WHATSAPP_API_URL = f"https://graph.facebook.com/v22.0/{PHONE_NUMBER_ID}/messages"
