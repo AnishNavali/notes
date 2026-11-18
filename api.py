@@ -14,10 +14,9 @@ router = APIRouter(prefix="/api")
 
 
 @router.get("/get_workspace")
-async def get_workspace(current_user: CurrentUser):  # current_user:CurrentUser
+async def get_workspace(current_user: CurrentUser):  
     """Return the workspace for the authenticated user."""
-    # print(current_user)
-    user_id = current_user.get("email", "")  # "Anish"
+    user_id = current_user.get("email", "") 
     workspace = db.get_one(collection="workspace", key={"user": user_id})
     if not workspace:
         return {"workspace": []}
@@ -38,7 +37,7 @@ def update_workspace(data: Component, current_user: CurrentUser):
     """Update a workspace component for the authenticated user."""
     user_id = current_user.get(
         "email", ""
-    )  # "Anish"#current_user.get("name") or current_user.get("email", "")
+    )  
     update = db.save(
         collection="workspace",
         key={"user": user_id, "workspace.title": data.title},
@@ -59,14 +58,12 @@ def clear_workspace(current_user: CurrentUser):
         False
 @router.delete("/delete_component")
 def delete_component(data: Component, current_user: CurrentUser):
-    user_id = current_user.get("email", "")  # "Anish"
-    print(data)
+    user_id = current_user.get("email", "") 
     delete = db.delete_one_item(
         collection="workspace",
         key={"user": user_id},
         doc={"workspace": {"title": data.title}},
     )
-    print(delete)
     if delete:
         return True
 
@@ -75,14 +72,14 @@ def delete_component(data: Component, current_user: CurrentUser):
 def add_to_workspace(data: Component, current_user: CurrentUser):
     user_id = current_user.get(
         "email", ""
-    )  # "Anish"#current_user.get("name") or current_user.get("email", "")
-    print(data)
+    ) 
+  
     update = db.push(
         collection="workspace",
         key={"user": user_id},
         doc={"workspace": data.component},
     )
-    print(update)
+
     if update:
         return True
 
@@ -97,12 +94,12 @@ class Signup(BaseModel):
 
 @router.get("/check_user")
 def check_user(current_user: CurrentUser):
-    email = current_user.get("email", "")  # "anish.navali@gmail.com"
+    email = current_user.get("email", "") 
     try:
         check = db.get_one(collection="users", key={"email": email})["whatsapp_number"]
         if check:
             data = db.get_one(collection="users", key={"email": email})
-            print(data)
+           
             return {"valid": True, "data": data}
     except Exception as e:
         print(str(e))
@@ -113,7 +110,7 @@ def check_user(current_user: CurrentUser):
 @router.post("/signup")
 def signup(data: Signup, current_user: CurrentUser):
 
-    email = current_user.get("email", "")  # "anish.navali@gmail.com"
+    email = current_user.get("email", "")  
     whatsapp_number = data.country_code.split("+")[1] + data.phone
     print(whatsapp_number)
     phone_check=db.get_one(collection="users",key={"whatsapp_number":whatsapp_number})
@@ -134,9 +131,6 @@ def signup(data: Signup, current_user: CurrentUser):
         return True
 
 
-# signup(data=Signup(country_code="+91",phone="9606024155"))
-# print(check_user())
-
 
 class Msg(BaseModel):
     msg: str
@@ -145,8 +139,7 @@ class Msg(BaseModel):
 @router.post("/llm")
 async def llm(msg: Msg, current_user: CurrentUser):
     email = current_user.get("email", "")
-    # user_data = db.query(collection="users", query={"email": email})
-    # user_data=check_sub_status()
+ 
     allow=check_sub_status(filter={"email":email})
     print(allow)
     if allow[0]:
@@ -176,9 +169,7 @@ async def llm(msg: Msg, current_user: CurrentUser):
                     "output_tokens": tokens["output_tokens"],
                 },
             )
-        #   <response_structure>Return in a json structure: answer: Your answer, update: True if there is an update to the workspace else False</response_structure>
-
-        # response_data=extract_json(response.content)
+   
         print(response.content)
         return {"answer": response.content, "update": True}
     else:
