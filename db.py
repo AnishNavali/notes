@@ -8,17 +8,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def connect_db():
-    # with open('config.toml','r') as f:
-    #     secrets=toml.load(f)
-    # mongo_username = secrets['mongo']['username']
-    # mongo_password = secrets['mongo']['password']
-    connection = os.getenv("MONGO_URI")#"mongodb://127.0.0.1:27017"
-    # connection = "mongodb+srv://Anish:Fjk22%26%2331@chatbotjs-mongo.mongocluster.cosmos.azure.com/?tls=true&authMechanism=SCRAM-SHA-256&retrywrites=false&maxIdleTimeMS=120000"
+   
+    connection = os.getenv("MONGO_URI")
+
     client = MongoClient(
         connection
-        #                  ,tls=True,
-        # tlsCAFile=certifi.where(),
-        # serverSelectionTimeoutMS=5000
     )
     db = client["reminders_db"]
     return db
