@@ -30,22 +30,7 @@ agent = Agent(model=
         cache_system_prompt=True,
         extended_cache_time=True,
         cache_response=True,
-        thinking=False),
-        # OpenRouter(id="qwen/qwen3.6-plus:free",
-        #            api_key="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"),
-        # AwsBedrock(
-        #     id="mistral.ministral-3-14b-instruct",
-        #     session=session
-
-        # ),
-        # Claude(id="claude-sonnet-4-6",
-        #           api_key="AIzaSyC7VqlDkuWg4Wp_9pUUnrIRZ7eYwUZuciM",
-        #           cache_system_prompt=True,
-        #         extended_cache_time=True,
-        #         cache_response=True,
-        #         thinking=False,
-        #         project_id="another-ai-app"
-        #           ),                
+        thinking=False),             
         db=db,
         read_chat_history=True,
         add_history_to_context=True,
@@ -75,16 +60,8 @@ OUTPUT NOTE: Keep your answers short.
     # debug_mode=True
 )
 voice_agent=Agent(model=
-             VLLM(id="Qwen/Qwen3-Omni-30B-A3B-Instruct",#"Qwen/Qwen3.5-35B-A3B-FP8",
-                       base_url="http://103.48.42.37:8000/v1",#"http://103.48.43.231:8000/v1",
+             VLLM(id="Qwen/Qwen3-Omni-30B-A3B-Instruct",
+                       base_url="",
                        api_key="EMPTY"),
-                    #    instructions="give me only the contents of the scanned doc and nothing else",
                        markdown=True,
                        )
-# time=datetime.now(pytz.timezone('Asia/Kolkata'))
-# print(time)
-# agent.print_response(input=f"""<user_name>Anish</user_name>
-#                       <message>the format for event has been updated can you change the existing event type with the new format</message> 
-#                      <datetime>{time}</datetime>"""
-#                      ,
-#                      debug_mode=True)
